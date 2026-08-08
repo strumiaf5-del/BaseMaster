@@ -14,12 +14,14 @@ try:
     from .validation_utils import MAX_FILE_SIZE, coerce_ws_chain_params, validate_audio_file
     from .audio_cache import get as audio_cache_get, put as audio_cache_put
     from . import library
+    from .routers import create_dashboard_router, create_info_router, create_jobs_router, create_library_router, create_reference_library_router
 except ImportError:  # pragma: no cover - fallback for direct script execution
     from job_service import JobService
     from audio_service import AudioService
     from validation_utils import MAX_FILE_SIZE, coerce_ws_chain_params, validate_audio_file
     from audio_cache import get as audio_cache_get, put as audio_cache_put
     import library
+    from routers import create_dashboard_router, create_info_router, create_jobs_router, create_library_router, create_reference_library_router
 try:
     from .mastering import (
         process_audio, analyze_audio, spectrum_analysis_fft, mix_advice,
@@ -134,6 +136,38 @@ async def resolve_input_source(file: Optional[UploadFile], library_id: Optional[
     validate_audio_file(file.filename)
     data = await read_and_validate(file)
     return data, file.filename
+
+
+app.include_router(create_info_router(
+    app=app,
+    jobs=jobs,
+    upload_dir=UPLOAD_DIR,
+    processed_dir=PROCESSED_DIR,
+    stems_dir=STEMS_DIR,
+    max_file_size=MAX_FILE_SIZE,
+    mastering_presets=MASTERING_PRESETS,
+    get_preset=get_preset,
+    platform_loudness_targets=PLATFORM_LOUDNESS_TARGETS,
+))
+app.include_router(create_library_router(
+    library_module=library,
+    library_dir=LIBRARY_DIR,
+    read_and_validate=read_and_validate,
+    validate_audio_file=validate_audio_file,
+))
+app.include_router(create_reference_library_router(
+    reference_library_module=ref_lib,
+    reference_library_dir=REFERENCE_LIBRARY_DIR,
+))
+app.include_router(create_dashboard_router(
+    jobs=jobs,
+    get_system_stats=get_system_stats,
+    logger=logger,
+))
+app.include_router(create_jobs_router(
+    jobs=jobs,
+    sanitize_track_name=sanitize_track_name,
+))
 
 # BUGFIX (/ai/auto-master): ai_assistant.decide_mastering() devuelve estas 4
 # claves en escala LINEAL (0-1) con el nombre interno viejo del motor, pero
@@ -331,121 +365,6 @@ def run_stems_job(job_id: str, input_path: str, mode: str = "demucs_4stem"):
 
 
 # ── Endpoints ──────────────────────────────────────────────────────────────────
-
-@app.get("/", tags=["Info"])
-def root():
-    return {"service": "Audio Mastering API", "version": "7.0.1",
-            "max_file_mb": MAX_FILE_SIZE // 1024 // 1024,
-            "endpoints": ["/master", "/master/sync", "/master/reference", "/master/reference/sync",
-                          "/preview", "/analyze", "/spectrum",
-                          "/mix-advice", "/job/{id}", "/download/{id}", "/report/{id}",
-                          "/stems/separate", "/stems/download/{id}/{stem}",
-                          "/presets", "/preset/{name}", "/platform-targets",
-                          "/dashboard", "/ws/dashboard", "/ws/master-stream", "/ws/mix-stream"]}
-
-# ── Biblioteca de referencias permanentes ────────────────────────────────────
-
-@app.get("/reference-library", tags=["Reference Library"])
-async def get_reference_library():
-    """Lista todas las referencias en REFERENCE_LIBRARY_DIR.
-    El watcher re-indexa automáticamente al detectar cambios en la carpeta.
-    Respuesta instantánea — solo lee el índice en memoria.
-    """
-    return {"entries": ref_lib.list_entries(), "dir": REFERENCE_LIBRARY_DIR}
-
-
-@app.post("/reference-library/rescan", tags=["Reference Library"])
-async def rescan_reference_library():
-    """Fuerza re-escaneo completo (re-analiza LUFS/peak de todos los archivos)."""
-    from fastapi.concurrency import run_in_threadpool
-    n = await run_in_threadpool(ref_lib.scan, True)
-    return {"status": "ok", "entries": n, "dir": REFERENCE_LIBRARY_DIR}
-
-
-@app.get("/health", tags=["Info"])
-def health():
-    return {
-        "status": "ok",
-        "service": "Audio Mastering API",
-        "version": app.version,
-        "jobs": len(jobs.get_all()),
-        "upload_dir": UPLOAD_DIR,
-        "processed_dir": PROCESSED_DIR,
-        "stems_dir": STEMS_DIR,
-        "max_file_size_mb": MAX_FILE_SIZE // 1024 // 1024,
-    }
-
-@app.get("/presets", tags=["Presets"])
-def list_presets():
-    return {name: preset for name, preset in MASTERING_PRESETS.items()}
-
-@app.get("/preset/{name}", tags=["Presets"])
-def get_preset_endpoint(name: str):
-    try:
-        return get_preset(name)
-    except KeyError as e:
-        raise HTTPException(404, str(e))
-
-@app.get("/platform-targets", tags=["Mastering"])
-def platform_targets():
-    return PLATFORM_LOUDNESS_TARGETS
-
-# ── Librería de archivos originales ─────────────────────────────────────────
-# A diferencia de UPLOAD_DIR (efímero, un archivo por job), esto persiste
-# indefinidamente hasta que el usuario lo borra desde la web. Pensado para no
-# tener que volver a arrastrar el mismo archivo cada vez que se quiere hacer
-# un nuevo preview o mastering del mismo tema.
-@app.post("/library/upload", tags=["Librería"])
-async def library_upload(file: UploadFile = File(...)):
-    """Guarda el archivo de forma permanente en el servidor y lo agrega a la
-    librería. Devuelve la metadata (id, nombre, duración, sr, canales) que el
-    frontend necesita para listarlo y luego seleccionarlo sin volver a
-    subirlo desde el disco local."""
-    validate_audio_file(file.filename)
-    data = await read_and_validate(file)
-    meta = await run_in_threadpool(library.add_file, LIBRARY_DIR, file.filename, data)
-    return meta
-
-@app.get("/library", tags=["Librería"])
-def library_list():
-    """Lista todos los archivos guardados, más reciente primero."""
-    return {"files": library.list_files(LIBRARY_DIR)}
-
-@app.get("/library/{file_id}/download", tags=["Librería"])
-def library_download(file_id: str):
-    """Devuelve el archivo tal cual se guardó. El frontend lo usa para traer
-    los bytes al elegir un archivo de la librería (sin que el usuario tenga
-    que volver a seleccionarlo de su disco) y alimentar el flujo normal de
-    carga/preview/mastering con ellos."""
-    path = library.get_path(LIBRARY_DIR, file_id)
-    if path is None:
-        raise HTTPException(404, "Archivo no encontrado en la librería (¿se borró?).")
-    meta = library.get_meta(LIBRARY_DIR, file_id)
-    filename = meta["original_filename"] if meta else os.path.basename(path)
-    return FileResponse(path, media_type="application/octet-stream", filename=filename)
-
-@app.delete("/library/{file_id}", tags=["Librería"])
-def library_delete(file_id: str):
-    ok = library.delete_file(LIBRARY_DIR, file_id)
-    if not ok:
-        raise HTTPException(404, "Archivo no encontrado en la librería.")
-    return {"deleted": file_id}
-
-@app.get("/dashboard", tags=["Dashboard"])
-def dashboard():
-    return get_system_stats(jobs.get_all())
-
-@app.websocket("/ws/dashboard")
-async def ws_dashboard(websocket: WebSocket):
-    await websocket.accept()
-    try:
-        while True:
-            await websocket.send_json(get_system_stats(jobs.get_all()))
-            await asyncio.sleep(1.0)
-    except WebSocketDisconnect:
-        pass
-    except Exception as e:
-        logger.warning(f"ws_dashboard error: {e}")
 
 @app.post("/analyze", tags=["Análisis"])
 async def analyze(file: UploadFile = File(...)):
@@ -2785,88 +2704,3 @@ async def ws_mix_stream(websocket: WebSocket):
             await websocket.send_json({"event": "error", "message": str(e)})
         except Exception:
             pass
-
-
-@app.get("/job/{job_id}", tags=["Jobs"])
-def get_job(job_id: str):
-    if not jobs.exists(job_id):
-        raise HTTPException(404, "Job no encontrado")
-    job = jobs.get_job(job_id).copy()
-    if job.get("type") == "stems":
-        # Job de stem separation (#13) — no tiene "result" como los de
-        # mastering, ya deja stem_analysis/available_stems seteados en
-        # run_stems_job(). Acá solo agregamos las download_url por stem y
-        # sacamos stem_paths (son paths de servidor, no deben salir por API).
-        if job["status"] == "done":
-            job["stem_download_urls"] = {
-                name: f"/stems/download/{job_id}/{name}" for name in job.get("available_stems", [])
-            }
-        job.pop("stem_paths", None)
-        return job
-    if job["status"] == "done":
-        job["download_url"]      = f"/download/{job_id}"
-        job["report_url"]        = f"/report/{job_id}"
-        job["analysis_before"]   = job["result"].get("analysis_before")
-        job["analysis_after"]    = job["result"].get("analysis_after")
-        job["mix_advice_before"] = job["result"].get("mix_advice_before")
-        job["mix_advice_after"]  = job["result"].get("mix_advice_after")
-        job["recommendations_before"] = job["result"].get("recommendations_before")
-        job["recommendations_after"] = job["result"].get("recommendations_after")
-        job["chain_meters"]      = job["result"].get("chain_meters", {})
-        job["output_bit_depth"]  = job["result"].get("output_bit_depth")
-        if "reference_match" in job["result"]:
-            job["reference_match"]    = job["result"]["reference_match"]
-            job["analysis_reference"] = job["result"]["analysis_reference"]
-        del job["result"]
-    return job
-
-@app.get("/download/{job_id}", tags=["Jobs"])
-def download(job_id: str, name: Optional[str] = Query(None, description="Nombre del tema para el archivo descargado")):
-    if not jobs.exists(job_id):
-        raise HTTPException(404, "Job no encontrado")
-    job = jobs.get_job(job_id)
-    if job["status"] != "done":
-        raise HTTPException(400, f"Job no listo: {job['status']}")
-    output_path = job["result"]["output_path"]
-    if not os.path.exists(output_path):
-        raise HTTPException(410, "Archivo expirado. Volvé a masterizar.")
-    # Los jobs de tipo "mix" (mixer multistem) no tienen job["params"] — el
-    # mezclador siempre escribe .wav (PCM_24). Los jobs de mastering normal
-    # sí tienen params.output_format.
-    fmt = job.get("params", {}).get("output_format", "wav")
-    mt = "audio/mpeg" if fmt == "mp3" else ("audio/flac" if fmt == "flac" else "audio/wav")
-    track_name = sanitize_track_name(name)
-    return FileResponse(output_path, media_type=mt, filename=f"{track_name}.{fmt}")
-
-@app.get("/report/{job_id}", tags=["Jobs"])
-def export_report(job_id: str):
-    if not jobs.exists(job_id):
-        raise HTTPException(404, "Job no encontrado")
-    job = jobs.get_job(job_id)
-    if job["status"] != "done":
-        raise HTTPException(400, f"Job no listo: {job['status']}")
-    report = {
-        "job_id": job_id,
-        "filename": job["filename"],
-        "created_at": job["created_at"],
-        "finished_at": job.get("finished_at"),
-        "params": job["params"],
-        "analysis_before": job["result"]["analysis_before"],
-        "analysis_after": job["result"]["analysis_after"],
-        "mix_advice_before": job["result"]["mix_advice_before"],
-        "mix_advice_after": job["result"]["mix_advice_after"],
-        "recommendations_before": job["result"].get("recommendations_before"),
-        "recommendations_after": job["result"].get("recommendations_after"),
-        "chain_meters": job["result"].get("chain_meters", {}),
-    }
-    if "reference_match" in job["result"]:
-        report["reference_match"]    = job["result"]["reference_match"]
-        report["analysis_reference"] = job["result"]["analysis_reference"]
-    return JSONResponse(content=report, headers={
-        "Content-Disposition": f'attachment; filename="mastering_report_{job_id[:8]}.json"'
-    })
-
-@app.get("/jobs", tags=["Jobs"])
-def list_jobs():
-    return [{"job_id": k, "status": v["status"], "filename": v["filename"], "created_at": v["created_at"]}
-            for k, v in jobs.get_all().items()]
