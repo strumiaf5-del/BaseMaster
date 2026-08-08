@@ -253,20 +253,9 @@
                         <span>↔ Estéreo</span>
                       </label>
                       <label
-                        style="
-                          display: flex;
-                          align-items: center;
-                          gap: 0.38rem;
-                          font-size: 0.7rem;
-                          background: var(--surface);
-                          border: 1px solid var(--border);
-                          border-radius: 5px;
-                          padding: 0.4rem 0.55rem;
-                          cursor: pointer;
-                          transition: border-color 0.12s;
-                        "
+                        
                         id="lbl-ref-eq"
-                      >
+                       class="field-group">
                         <input
                           type="checkbox"
                           id="s-ref-eq"
@@ -276,41 +265,19 @@
                         <span>🎛 EQ Tonal</span>
                       </label>
                       <label
-                        style="
-                          display: flex;
-                          align-items: center;
-                          gap: 0.38rem;
-                          font-size: 0.7rem;
-                          background: var(--surface);
-                          border: 1px solid var(--border);
-                          border-radius: 5px;
-                          padding: 0.4rem 0.55rem;
-                          cursor: pointer;
-                          transition: border-color 0.12s;
-                        "
+                        
                         id="lbl-ref-transient"
                       >
                         <input
                           type="checkbox"
                           id="s-ref-transient"
                           checked=""
-                          class="field-input accent-amber"
+                          class="field-input accent-amber field-group"
                         />
                         <span>💥 Punch</span>
                       </label>
                       <label
-                        style="
-                          display: flex;
-                          align-items: center;
-                          gap: 0.38rem;
-                          font-size: 0.7rem;
-                          background: var(--surface);
-                          border: 1px solid var(--border);
-                          border-radius: 5px;
-                          padding: 0.4rem 0.55rem;
-                          cursor: pointer;
-                          transition: border-color 0.12s;
-                        "
+                        
                         id="lbl-ref-subbass"
                       >
                         <input
@@ -322,25 +289,14 @@
                         <span>🔊 Sub-graves</span>
                       </label>
                       <label
-                        style="
-                          display: flex;
-                          align-items: center;
-                          gap: 0.38rem;
-                          font-size: 0.7rem;
-                          background: var(--surface);
-                          border: 1px solid var(--border);
-                          border-radius: 5px;
-                          padding: 0.4rem 0.55rem;
-                          cursor: pointer;
-                          transition: border-color 0.12s;
-                        "
+                        
                         id="lbl-ref-desser"
                       >
                         <input
                           type="checkbox"
                           id="s-ref-desser"
                           checked=""
-                          class="field-input accent-amber"
+                          class="field-input accent-amber field-group"
                         />
                         <span>🗡 De-esser</span>
                       </label>
@@ -367,7 +323,7 @@
                       <summary class="details-summary">
                         ⚙ Parámetros avanzados
                       </summary>
-                      <div class="mt-sm">
+                      <div class="mt-sm field-group">
                         <div class="param">
                           <label>Máx. boost EQ</label>
                           <span class="val" id="v-ref-boost">6.0 dB</span>
@@ -461,7 +417,7 @@
                           <p class="note-mini">Si la referencia viene muy hot (-8/-7/-9 LUFS) y no la querés heredar, activá esto — el resto del matching (EQ, dinámica, estéreo) sigue igual, solo el volumen final queda fijo acá.</p>
                         </div>
                         <div class="param param--md">
-                          <label>Techo de loudness (máximo) <span style="font-size:.65rem;color:var(--muted)">nunca lo supera, sea cual sea la referencia</span></label>
+                          <label>Techo de loudness (máximo) <span class="note-mini">nunca lo supera, sea cual sea la referencia</span></label>
                           <span class="val" id="v-ref-max-lufs">-12.0</span>
                           <input
                             type="range"
@@ -987,16 +943,7 @@
                     <span class="val" id="v-sgain">0 dB</span>
                     <input type="range" id="s-sgain" min="-18" max="18" step="0.5" value="0" />
                   </div>
-                  <label
-                    style="
-                      display: flex;
-                      align-items: center;
-                      gap: 0.45rem;
-                      font-size: 0.76rem;
-                      margin: 0.5rem 0 0.25rem;
-                      cursor: pointer;
-                    "
-                  >
+                  <label  class="toggle-label mt-base">
                     <input type="checkbox" id="s-mseq-bypass" checked="" class="field-input" />
                     Bypass EQ M/S bandeada
                   </label>
@@ -1030,7 +977,7 @@
                         <span class="val" id="v-mseq-side-freq">8.0 kHz</span>
                         <input type="range" id="s-mseq-side-freq" min="1000" max="20000" step="100" value="8000" />
                       </div>
-                      <div class="param">
+                      <div class="param toggle-label mt-base">
                         <label>Gain</label>
                         <span class="val" id="v-mseq-side-gain">0 dB</span>
                         <input type="range" id="s-mseq-side-gain" min="-12" max="12" step="0.5" value="0" />
@@ -1043,22 +990,7 @@
                     </div>
                   </div>
 
-                  <label
-                    style="
-                      display: flex;
-                      align-items: center;
-                      gap: 0.45rem;
-                      font-size: 0.76rem;
-                      margin: 0.75rem 0 0.25rem;
-                      cursor: pointer;
-                    "
-                  >
-                    <input type="checkbox" id="s-mscomp-bypass" checked="" class="field-input" />
-                    Bypass Compresor M/S
-                  </label>
-                  <div class="control-row-wide">
-                    <div>
-                      <div class="param-label" class="param-label">
+                  <label > <input type="checkbox" id="s-mscomp-bypass" checked="" class="field-input toggle-label mt-lg" /> Bypass Compresor M/S </label> <div class="control-row-wide"> <div> <div class="param-label" class="param-label">
                         Mid
                       </div>
                       <div class="param">
@@ -1083,34 +1015,17 @@
                       </div>
                       <div class="param">
                         <label>Makeup</label>
-                        <span class="val" id="v-mscomp-mid-makeup">+0.0 dB</span>
+                        <span class="val toggle-label mt-lg" id="v-mscomp-mid-makeup">+0.0 dB</span>
                         <input type="range" id="s-mscomp-mid-makeup" min="0" max="24" step="0.5" value="0" />
                       </div>
                     </div>
-<label
-                      style="
-                        display: flex;
-                        align-items: center;
-                        gap: 0.45rem;
-                        font-size: 0.76rem;
-                        margin: 0.5rem 0 0.35rem;
-                        cursor: pointer;
-                        grid-column: 1 / -1;
-                      "
-                    >
+                    <label class="toggle-label grid-full toggle-label--compact">
                       <input type="checkbox" id="s-mscomp-pdr" checked="" class="field-input" />
                       PDR (Program-Dependent Release, Mid + Side)
                     </label>
                     <div class="param grid-full">
                       <label>PDR Hold</label>
-                      <span class="val" id="v-mscomp-pdr-hold">500 ms</span>
-                      <input type="range" id="s-mscomp-pdr-hold" min="50" max="2000" step="10" value="500" />
-                    </div>
-                    <div>
-                      <div class="param-label" class="param-label">
-                        Side
-                      </div>
-                      <div class="param">
+                      <span class="val toggle-label grid-full toggle-label--compact" id="v-mscomp-pdr-hold">500 ms</span> <input type="range" id="s-mscomp-pdr-hold" min="50" max="2000" step="10" value="500" /> </div> <div> <div class="param-label" class="param-label"> Side </div> <div class="param">
                         <label>Threshold</label>
                         <span class="val" id="v-mscomp-side-thresh">-18.0 dB</span>
                         <input type="range" id="s-mscomp-side-thresh" min="-60" max="0" step="0.5" value="-18" />
@@ -1125,7 +1040,7 @@
                         <span class="val" id="v-mscomp-side-attack">15.0 ms</span>
                         <input type="range" id="s-mscomp-side-attack" min="0.1" max="200" step="0.1" value="15" />
                       </div>
-                      <div class="param">
+                      <div class="param toggle-label grid-full toggle-label--compact">
                         <label>Release</label>
                         <span class="val" id="v-mscomp-side-release">120 ms</span>
                         <input type="range" id="s-mscomp-side-release" min="5" max="2000" step="5" value="120" />
@@ -1338,16 +1253,7 @@
                       <input type="range" id="s-mb-low-mu" min="-12" max="24" step="0.5" value="0" />
                     </div>
                   </div>
-<label
-                    style="
-                      display: flex;
-                      align-items: center;
-                      gap: 0.45rem;
-                      font-size: 0.76rem;
-                      margin: 0.5rem 0 0.35rem;
-                      cursor: pointer;
-                    "
-                  >
+                  <label class="toggle-label mt-base toggle-label--compact">
                     <input type="checkbox" id="s-mb-pdr" checked="" class="field-input" />
                     PDR (Program-Dependent Release, comparte config las 3 bandas)
                   </label>
@@ -1356,11 +1262,7 @@
                     <span class="val" id="v-mb-pdr-hold">500 ms</span>
                     <input type="range" id="s-mb-pdr-hold" min="50" max="2000" step="10" value="500" />
                   </div>
-                  <div class="mb-panel" id="mb-panel-mid">
-                    <div class="param">
-                      <label>Threshold (dB)</label>
-                      <span class="val" id="v-mb-mid-th">-18.0 dB</span>
-                      <input type="range" id="s-mb-mid-th" min="-60" max="0" step="0.5" value="-18" />
+                  <div class="mb-panel toggle-label" id="mb-panel-mid"> <div class="param"> <label>Threshold (dB)</label> <span class="val" id="v-mb-mid-th">-18.0 dB</span> <input type="range" id="s-mb-mid-th" min="-60" max="0" step="0.5" value="-18" />
                     </div>
                     <div class="param">
                       <label>Ratio</label>
@@ -1377,7 +1279,7 @@
                       <span class="val" id="v-mb-mid-rel">100 ms</span>
                       <input type="range" id="s-mb-mid-rel" min="10" max="1000" step="5" value="100" />
                     </div>
-                    <div class="param">
+                    <div class="param toggle-label mt-base toggle-label--compact">
                       <label>Make-up</label>
                       <span class="val" id="v-mb-mid-mu">0 dB</span>
                       <input type="range" id="s-mb-mid-mu" min="-12" max="24" step="0.5" value="0" />
@@ -1578,16 +1480,7 @@
                     <input type="range" id="s-glue-makeup" min="-12" max="12" step="0.5" value="0" />
                   </div>
                 </div>
-<label
-                    style="
-                      display: flex;
-                      align-items: center;
-                      gap: 0.45rem;
-                      font-size: 0.76rem;
-                      margin-bottom: 0.35rem;
-                      cursor: pointer;
-                    "
-                  >
+                  <label class="toggle-label toggle-label--compact">
                     <input type="checkbox" id="s-glue-pdr" checked="" class="field-input" />
                     PDR (Program-Dependent Release)
                   </label>
@@ -1599,14 +1492,7 @@
 
                 <!-- ── Etapa 14: Clipper ── -->
                 <div>
-                  <div class="section-label">
-                    <span class="stage-num">14</span>
-                    ✂️ Clipper
-                  </div>
-                  <label class="toggle-label toggle-label--compact">
-                    <input type="checkbox" id="s-clip-bypass" checked="" class="field-input" />
-                    Bypass clipper
-                  </label>
+                  <div class="section-label toggle-label toggle-label--compact"> <span class="stage-num">14</span> ✂️ Clipper </div> <label class="toggle-label toggle-label--compact"> <input type="checkbox" id="s-clip-bypass" checked="" class="field-input" /> Bypass clipper </label>
                   <select id="s-clip-mode" class="select-full">
                     <option value="soft" selected="">Soft (tanh, musical)</option>
                     <option value="hard">Hard (corte duro)</option>
@@ -1621,7 +1507,7 @@
                     <span class="val" id="v-clip-drive">+0.0 dB</span>
                     <input type="range" id="s-clip-drive" min="0" max="24" step="0.5" value="0" />
                   </div>
-                  <div class="text-muted-body">
+                  <div class="text-muted-body toggle-label toggle-label--compact">
                     Le quita trabajo al limitador antes de que este entre a actuar.
                   </div>
                 </div>
@@ -1710,16 +1596,7 @@
               <div class="process-card-body">
                 <div>
                   <div class="section-label">Preview en tiempo real</div>
-                  <label
-                    style="
-                      display: flex;
-                      align-items: center;
-                      gap: 0.45rem;
-                      font-size: 0.76rem;
-                      margin-bottom: 0.25rem;
-                      cursor: pointer;
-                    "
-                  >
+                  <label class="toggle-label toggle-label--tight">
                     <input type="checkbox" id="s-livepreview" class="field-input" />
                     Actualizar al mover
                   </label>
@@ -1733,13 +1610,7 @@
                 </div>
 
                 <div class="process-card process-card-accent">
-                  <button class="btn btn-automaster" id="btnAutoMaster" disabled="" class="hidden-panel">
-                    🤖 Auto-Mastering IA
-                  </button>
-                  <button class="btn btn-secondary" id="btnAiSuggest" disabled="" class="hidden-panel">
-                    🤖 Sugerir con IA (sin masterizar)
-                  </button>
-                  <button class="btn btn-primary" id="btnMaster" disabled="">▶ Masterizar</button>
+                  <button class="btn btn-automaster toggle-label toggle-label--tight" id="btnAutoMaster" disabled="" class="hidden-panel"> 🤖 Auto-Mastering IA </button> <button class="btn btn-secondary" id="btnAiSuggest" disabled="" class="hidden-panel"> 🤖 Sugerir con IA (sin masterizar) </button> <button class="btn btn-primary" id="btnMaster" disabled="">▶ Masterizar</button>
                   <div id="secondaryBtnGrid" class="grid-2cols-tight">
                     <button class="btn btn-secondary" id="btnAnalyzeGrid" disabled="" class="hidden-panel">
                       🔍 Analizar
@@ -1747,7 +1618,7 @@
                     <button class="btn btn-secondary" id="btnAdviceGrid" disabled="" class="hidden-panel">
                       💡 Consejos
                     </button>
-                    <button class="btn btn-secondary" id="btnSpectrum" disabled="" class="hidden-panel">
+                    <button class="btn btn-secondary toggle-label toggle-label--tight" id="btnSpectrum" disabled="" class="hidden-panel">
                       📊 Spectrum
                     </button>
                     <select
@@ -1876,14 +1747,14 @@
                     <div class="dash-label">CPU</div>
                     <div class="dash-value" id="dashCpu">--%</div>
                     <div class="dash-bar-track">
-                      <div class="dash-bar-fill" id="dashCpuBar" style="width: 0%"></div>
+                      <div class="dash-bar-fill" id="dashCpuBar" ></div>
                     </div>
                   </div>
                   <div class="dash-card">
                     <div class="dash-label">RAM</div>
                     <div class="dash-value" id="dashRam">--%</div>
                     <div class="dash-bar-track">
-                      <div class="dash-bar-fill" id="dashRamBar" style="width: 0%"></div>
+                      <div class="dash-bar-fill" id="dashRamBar" ></div>
                     </div>
                   </div>
                   <div class="dash-card">
@@ -1896,7 +1767,7 @@
                   </div>
                   <div class="dash-card">
                     <div class="dash-label">Estado / ETA</div>
-                    <div class="dash-value" id="dashEta" style="font-size: 0.95rem">Inactivo</div>
+                    <div class="dash-value dash-value-eta" id="dashEta">Inactivo</div>
                     <div class="dash-queue-row" id="dashActiveFile"></div>
                   </div>
                 </div>
@@ -2100,42 +1971,13 @@
                 <canvas id="jobSpectrumCanvas" height="100" class="preview-spectrum-canvas" aria-label="Espectro en tiempo real, barras de frecuencia"></canvas>
               </div>
               <div id="dynEqRecWrap" class="preview-subsection hidden-panel">
-                <div
-                  style="
-                    font-size: 0.7rem;
-                    color: var(--muted);
-                    display: flex;
-                    align-items: center;
-                    gap: 0.45rem;
-                  "
-                >
-                  <span
-                    style="
-                      display: inline-block;
-                      width: 7px;
-                      height: 7px;
-                      border-radius: 50%;
-                      background: var(--lilac);
-                    "
-                  ></span>
+                <div class="preview-note-row note-mini">
+                  <span class="dot-lilac"></span>
                   Dynamic EQ — detección en vivo (resonancias / sibilancia)
                 </div>
-                <div
-                  id="dynEqRecBody"
-                  style="
-                    background: var(--surface2);
-                    border: 1px solid var(--border);
-                    border-left: 2px solid var(--lilac);
-                    border-radius: 6px;
-                    padding: 0.6rem 0.75rem;
-                    font-size: 0.76rem;
-                    line-height: 1.5;
-                    color: var(--text);
-                  "
-                ></div>
+                <div id="dynEqRecBody" class="preview-info-box"></div>
               </div>
-
-              <div class="preview-audio" id="previewAudioWrap" aria-live="polite"></div>
+              <div class="preview-audio preview-note-row note-mini" id="previewAudioWrap" aria-live="polite"></div>
             </div>
           </div>
           <!-- /content-grid -->
@@ -2150,26 +1992,12 @@
      ════════════════════════ -->
     <button class="ai-fab" id="aiFab" title="Asistente de IA">
       🤖
-      <span class="ai-fab-dot" id="aiFabDot"></span>
-    </button>
-
-    <div class="ai-panel" id="aiPanel">
-      <div class="ai-panel-head">
-        <div class="ai-avatar">🤖</div>
-        <div class="ai-title">
-          <b>Asistente de IA</b>
-          <small id="aiStatusLine">Consultando…</small>
+      <span class="ai-fab-dot dot-lilac" id="aiFabDot"></span> </button> <div class="ai-panel" id="aiPanel"> <div class="ai-panel-head"> <div class="ai-avatar">🤖</div> <div class="ai-title"> <b>Asistente de IA</b> <small id="aiStatusLine">Consultando…</small>
         </div>
-        <button class="ai-close" id="aiClose" title="Cerrar">✕</button>
+        <button class="ai-close preview-note-row note-mini" id="aiClose" title="Cerrar">✕</button>
       </div>
       <div class="ai-messages" id="aiMessages"></div>
-      <div class="ai-suggestions" id="aiSuggestions"></div>
-      <div class="ai-inputrow">
-        <textarea id="aiInput" rows="1" placeholder="Preguntale al asistente sobre tu mezcla…"></textarea>
-        <button class="ai-send-btn" id="aiSend" title="Enviar">➤</button>
-      </div>
-      <div class="ai-panel-foot">Puede analizar, aconsejar o masterizar tu track automáticamente</div>
-    </div>
+      <div class="ai-suggestions dot-lilac preview-info-box" id="aiSuggestions"></div> <div class="ai-inputrow"> <textarea id="aiInput" rows="1" placeholder="Preguntale al asistente sobre tu mezcla…"></textarea> <button class="ai-send-btn" id="aiSend" title="Enviar">➤</button> </div> <div class="ai-panel-foot">Puede analizar, aconsejar o masterizar tu track automáticamente</div> </div>
 
         <script src="js/01-state.js"></script>
     <script src="js/02-sliders-ui.js"></script>
@@ -2180,7 +2008,7 @@
     <script src="js/07-mastering-actions.js"></script>
     <script src="js/08-reference-mastering.js"></script>
     <script src="js/reference-library-picker.js"></script>
-    <script src="js/09-visualizers.js"></script>
+    <script src="js/09-visualizers.js" class="preview-info-box"></script>
     <script src="js/10-meters-dashboard.js"></script>
     <script src="js/11-ai-assistant-ux.js"></script>
     <script src="js/12-lufs-normalize.js"></script>
