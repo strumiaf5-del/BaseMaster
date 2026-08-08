@@ -22,6 +22,19 @@ class PersistableJobState(dict):
         super().__setitem__(key, value)
         self._persist()
 
+
+    def __getitem__(self, key: str) -> Any:
+        with self._state_lock:
+            return super().__getitem__(key)
+
+    def __contains__(self, key: object) -> bool:
+        with self._state_lock:
+            return super().__contains__(key)
+
+    def items(self):
+        with self._state_lock:
+            return list(super().items())
+
     def update(self, *args, **kwargs) -> None:
         super().update(*args, **kwargs)
         self._persist()
@@ -69,7 +82,8 @@ class JobStore(dict):
 
         # Debounce: un solo timer activo por instancia
         self._timer: Optional[threading.Timer] = None
-        self._timer_lock = threading.Lock()
+        self._timer_lock = threading.RLock()
+        self._state_lock = threading.RLock()
 
         self._load()
         # Garantizar flush final si el proceso se cierra sin que el timer haya disparado
@@ -84,15 +98,17 @@ class JobStore(dict):
         except (json.JSONDecodeError, OSError):
             return
 
-        super().clear()
-        for key, value in raw.items():
-            if isinstance(value, dict):
-                super().__setitem__(key, PersistableJobState(value, self._persist))
-            else:
-                super().__setitem__(key, value)
+        with self._state_lock:
+            super().clear()
+            for key, value in raw.items():
+                if isinstance(value, dict):
+                    super().__setitem__(key, PersistableJobState(value, self._persist))
+                else:
+                    super().__setitem__(key, value)
 
     def _to_serializable(self) -> dict:
-        return {key: dict(value) if isinstance(value, PersistableJobState) else value for key, value in self.items()}
+        with self._state_lock:
+            return {key: dict(value) if isinstance(value, PersistableJobState) else value for key, value in self.items()}
 
     # ── Persistencia diferida ─────────────────────────────────────────────────
 
@@ -132,11 +148,25 @@ class JobStore(dict):
     # ── Overrides del dict ────────────────────────────────────────────────────
 
     def __setitem__(self, key: str, value: Any) -> None:
-        if isinstance(value, dict) and not isinstance(value, PersistableJobState):
-            value = PersistableJobState(value, self._persist)
-        super().__setitem__(key, value)
+        with self._state_lock:
+            if isinstance(value, dict) and not isinstance(value, PersistableJobState):
+                value = PersistableJobState(value, self._persist)
+            super().__setitem__(key, value)
         # Creación de job nuevo → flush inmediato para no perder si cae el proceso
         self._flush()
+
+
+    def __getitem__(self, key: str) -> Any:
+        with self._state_lock:
+            return super().__getitem__(key)
+
+    def __contains__(self, key: object) -> bool:
+        with self._state_lock:
+            return super().__contains__(key)
+
+    def items(self):
+        with self._state_lock:
+            return list(super().items())
 
     def update(self, *args, **kwargs) -> None:
         for mapping in args:
@@ -149,21 +179,26 @@ class JobStore(dict):
             self[key] = value
 
     def setdefault(self, key: str, default: Any = None) -> Any:
-        if key in self:
-            return self[key]
+        with self._state_lock:
+            if key in self:
+                return self[key]
         self[key] = default
-        return self[key]
+        with self._state_lock:
+            return self[key]
 
     def pop(self, key: str, default: Any = None) -> Any:
-        value = super().pop(key, default)
+        with self._state_lock:
+            value = super().pop(key, default)
         self._flush()   # baja frecuencia → flush inmediato
         return value
 
     def popitem(self):
-        value = super().popitem()
+        with self._state_lock:
+            value = super().popitem()
         self._flush()
         return value
 
     def clear(self) -> None:
-        super().clear()
+        with self._state_lock:
+            super().clear()
         self._flush()

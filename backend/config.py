@@ -10,3 +10,7 @@ ALLOWED_EXTENSIONS = {".wav", ".mp3", ".flac", ".ogg", ".aiff", ".aif"}
 # Carpeta de referencias permanentes — el usuario pone sus tracks de referencia
 # acá y el servidor los indexa automáticamente. Se puede cambiar por env var.
 REFERENCE_LIBRARY_DIR = os.getenv("REFERENCE_LIBRARY_DIR", "reference_library")
+
+# Librería persistente de stems del mixer — permite reutilizar pistas individuales
+# sin volver a subirlas en cada sesión.
+STEM_LIBRARY_DIR = os.getenv("STEM_LIBRARY_DIR", "stem_library")
