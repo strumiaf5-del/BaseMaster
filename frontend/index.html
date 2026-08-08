@@ -81,7 +81,7 @@
 
                   <div class="panel-block panel-block-secondary">
                     <div class="section-note">📏 Normalizar por LUFS (sin procesar nada más)</div>
-                    <div class="param" style="margin-bottom:0.5rem">
+                    <div class="param" class="param param--lg">
                       <label>LUFS objetivo</label>
                       <span class="val" id="v-normalize-lufs">-14.0</span>
                       <input
@@ -96,10 +96,10 @@
                       <p class="small-text">Solo ganancia — sin EQ, sin dinámica, sin referencia. -14 = streaming (Spotify/YouTube) · -23 = broadcast (EBU R128) · -6 = muy hot.</p>
                     </div>
                     <button class="btn btn-secondary full-width" id="btnNormalizeLufs">Normalizar</button>
-                    <div id="normalize-status" class="small-text" style="margin-top:0.4rem"></div>
+                    <div id="normalize-status" class="small-text" class="space-top-sm"></div>
                   </div>
 
-                  <label class="checkbox-row" style="margin-top:0.4rem; font-size: 0.82rem; opacity: .85; cursor: pointer;">
+                  <label class="checkbox-row small-text mt-sm">
                     <input type="checkbox" id="saveToLibraryChk" checked />
                     Guardar en mi librería del servidor
                   </label>
@@ -109,10 +109,10 @@
                 <div>
                   <div class="section-label section-header-row">
                     <span>Mi librería</span>
-                    <button type="button" id="btnRefreshLibrary" class="btn btn-secondary" style="font-size:11px;padding:0.35rem 0.6rem;">↻ actualizar</button>
+                    <button type="button" id="btnRefreshLibrary" class="btn btn-secondary" class="btn-secondary btn-small">↻ actualizar</button>
                   </div>
                   <div id="libraryList" class="panel-block panel-block-secondary scroll-panel">
-                    <div style="opacity:.6;padding:6px 2px;">Cargando…</div>
+                    <div class="loading-placeholder">Cargando…</div>
                   </div>
                 </div>
 
@@ -142,8 +142,8 @@
                   </div>
                   <button class="btn-preset-load" id="btnLoadPresetJson">📂 Cargar preset (JSON)</button>
                   <input type="file" id="presetJsonInput" accept=".json,application/json" class="hidden-input" />
-                  <div id="presetLoadStatus" class="small-text" style="min-height: 1em; margin-top: 0.22rem;"></div>
-                  <div class="param" style="margin-bottom: 0.45rem; margin-top: 0.35rem">
+                  <div id="presetLoadStatus" class="status-text"></div>
+                  <div class="param" class="param param--lg">
                     <label>Objetivo de loudness (plataforma)</label>
                   </div>
                   <select id="s-platform">
@@ -158,7 +158,7 @@
                 </div>
 
                 <!-- Match mastering -->
-                <details style="margin-bottom: 0">
+                <details class="mb-none">
                   <summary class="summary-accent">
                     <span class="summary-pill"></span>
                     🎯 Match Mastering (referencia)
@@ -168,154 +168,87 @@
                   <div class="space-top-sm">
                     <p class="summary-muted">
                       Subí un track masterizado y el sistema igualará el
-                      <b style="color: var(--text)">timbre</b>,
-                      <b style="color: var(--text)">loudness</b>,
-                      <b style="color: var(--text)">dinámica</b>,
-                      <b style="color: var(--text)">estéreo</b>,
-                      <b style="color: var(--text)">punch</b>
+                      <b class="text-on-surface">timbre</b>,
+                      <b class="text-on-surface">loudness</b>,
+                      <b class="text-on-surface">dinámica</b>,
+                      <b class="text-on-surface">estéreo</b>,
+                      <b class="text-on-surface">punch</b>
                       ,
-                      <b style="color: var(--text)">sub-graves</b>
+                      <b class="text-on-surface">sub-graves</b>
                       ,
-                      <b style="color: var(--text)">sibilancia</b>
+                      <b class="text-on-surface">sibilancia</b>
                       y
-                      <b style="color: var(--text)">carácter armónico</b>
+                      <b class="text-on-surface">carácter armónico</b>
                       .
                     </p>
-                    <div
-                      class="drop-zone-ref"
-                      id="dropZoneRef"
-                      style="
-                        border: 1px dashed var(--lilac);
-                        border-radius: 8px;
-                        padding: 0.8rem;
-                        text-align: center;
-                        cursor: pointer;
-                        transition: background 0.2s;
-                        position: relative;
-                        margin-bottom: 0.65rem;
-                      "
-                    >
+                    <div class="drop-zone-ref" id="dropZoneRef">
                       <input
                         type="file"
                         id="refFileInput"
                         accept=".wav,.mp3,.flac,.ogg,.aiff,.aif"
-                        style="position: absolute; inset: 0; opacity: 0; cursor: pointer"
+                        class="overlay-input"
                       />
-                      <div style="font-size: 1.2rem; margin-bottom: 0.25rem">🎯</div>
-                      <p style="margin: 0; font-size: 0.76rem; color: var(--text); font-weight: 500">
+                      <div class="drop-zone-icon">🎯</div>
+                      <p class="drop-zone-text">
                         Arrastrá el track de referencia
                       </p>
-                      <p style="margin: 0.18rem 0 0; font-size: 0.65rem; color: var(--muted)">
+                      <p class="drop-zone-note">
                         WAV · MP3 · FLAC · OGG · AIFF — máx 200 MB
                       </p>
                       <div
                         class="file-name"
                         id="refFileName"
-                        style="margin-top: 0.35rem; font-size: 0.68rem; color: var(--lilac); font-family: var(--mono)"
+                        
                       ></div>
                     </div>
                     <!-- Biblioteca de referencias permanentes -->
                     <button
                       id="btnOpenRefLib"
-                      style="
-                        width: 100%;
-                        margin-bottom: 0.4rem;
-                        padding: 0.38rem 0.6rem;
-                        background: var(--surface2, #1a1a2e);
-                        border: 1px dashed var(--lilac, #a78bfa);
-                        border-radius: 6px;
-                        color: var(--lilac, #a78bfa);
-                        font-size: 0.75rem;
-                        cursor: pointer;
-                        text-align: left;
-                        display: flex;
-                        align-items: center;
-                        gap: 0.4rem;
-                        transition: background 0.15s;
-                      "
+                      class="btn-ref-library"
                       onmouseover="this.style.background='var(--surface3,#22223a)'"
                       onmouseout="this.style.background='var(--surface2,#1a1a2e)'"
                     >
                       📚 <span>Elegir desde biblioteca de referencias</span>
-                      <span id="refLibCount" style="margin-left:auto;opacity:.55;font-size:.68rem"></span>
+                      <span id="refLibCount" class="muted-small ml-auto"></span>
                     </button>
-                    <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.5rem; font-size: 0.68rem">
-                      <label style="display: flex; align-items: center; gap: 0.28rem; cursor: pointer">
+                    <div class="ref-actions">
+                      <label class="checkbox-row">
                         <input type="checkbox" id="saveRefToLibraryChk" checked="" />
                         Guardar referencia en mi librería
                       </label>
-                      <a href="#" id="toggleRefLibraryList" style="color: var(--lilac); text-decoration: none">
+                      <a href="#" id="toggleRefLibraryList" class="link-inline">
                         usar de mi librería ▾
                       </a>
                     </div>
-                    <div id="libraryListRef" style="display: none; max-height: 140px; overflow-y: auto; margin-bottom: 0.5rem; border: 1px solid rgba(255,255,255,.08); border-radius: 6px"></div>
-                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.35rem; margin-bottom: 0.65rem">
-                      <label
-                        style="
-                          display: flex;
-                          align-items: center;
-                          gap: 0.38rem;
-                          font-size: 0.7rem;
-                          background: var(--surface);
-                          border: 1px solid var(--border);
-                          border-radius: 5px;
-                          padding: 0.4rem 0.55rem;
-                          cursor: pointer;
-                          transition: border-color 0.12s;
-                        "
-                        id="lbl-ref-loudness"
+                    <div id="libraryListRef" class="ref-library-list hidden-panel"></div>
+                    <div class="control-row">
+                      <label class="field-group" id="lbl-ref-loudness"
                       >
                         <input
                           type="checkbox"
                           id="s-ref-loudness"
                           checked=""
-                          style="width: auto; cursor: pointer; accent-color: var(--amber)"
+                          class="field-input accent-amber"
                         />
                         <span>📊 Loudness</span>
                       </label>
-                      <label
-                        style="
-                          display: flex;
-                          align-items: center;
-                          gap: 0.38rem;
-                          font-size: 0.7rem;
-                          background: var(--surface);
-                          border: 1px solid var(--border);
-                          border-radius: 5px;
-                          padding: 0.4rem 0.55rem;
-                          cursor: pointer;
-                          transition: border-color 0.12s;
-                        "
-                        id="lbl-ref-dynamics"
+                      <label class="field-group" id="lbl-ref-dynamics"
                       >
                         <input
                           type="checkbox"
                           id="s-ref-dynamics"
                           checked=""
-                          style="width: auto; cursor: pointer; accent-color: var(--amber)"
+                          class="field-input accent-amber"
                         />
                         <span>🎚 Dinámica</span>
                       </label>
-                      <label
-                        style="
-                          display: flex;
-                          align-items: center;
-                          gap: 0.38rem;
-                          font-size: 0.7rem;
-                          background: var(--surface);
-                          border: 1px solid var(--border);
-                          border-radius: 5px;
-                          padding: 0.4rem 0.55rem;
-                          cursor: pointer;
-                          transition: border-color 0.12s;
-                        "
-                        id="lbl-ref-stereo"
+                      <label class="field-group" id="lbl-ref-stereo"
                       >
                         <input
                           type="checkbox"
                           id="s-ref-stereo"
                           checked=""
-                          style="width: auto; cursor: pointer; accent-color: var(--amber)"
+                          class="field-input accent-amber"
                         />
                         <span>↔ Estéreo</span>
                       </label>
@@ -338,7 +271,7 @@
                           type="checkbox"
                           id="s-ref-eq"
                           checked=""
-                          style="width: auto; cursor: pointer; accent-color: var(--amber)"
+                          class="field-input accent-amber"
                         />
                         <span>🎛 EQ Tonal</span>
                       </label>
@@ -361,7 +294,7 @@
                           type="checkbox"
                           id="s-ref-transient"
                           checked=""
-                          style="width: auto; cursor: pointer; accent-color: var(--amber)"
+                          class="field-input accent-amber"
                         />
                         <span>💥 Punch</span>
                       </label>
@@ -384,7 +317,7 @@
                           type="checkbox"
                           id="s-ref-subbass"
                           checked=""
-                          style="width: auto; cursor: pointer; accent-color: var(--amber)"
+                          class="field-input accent-amber"
                         />
                         <span>🔊 Sub-graves</span>
                       </label>
@@ -407,55 +340,34 @@
                           type="checkbox"
                           id="s-ref-desser"
                           checked=""
-                          style="width: auto; cursor: pointer; accent-color: var(--amber)"
+                          class="field-input accent-amber"
                         />
                         <span>🗡 De-esser</span>
                       </label>
-                      <label
-                        style="
-                          display: flex;
-                          align-items: center;
-                          gap: 0.38rem;
-                          font-size: 0.7rem;
-                          background: var(--surface);
-                          border: 1px solid var(--border);
-                          border-radius: 5px;
-                          padding: 0.4rem 0.55rem;
-                          cursor: pointer;
-                          transition: border-color 0.12s;
-                        "
-                        id="lbl-ref-saturation"
+                      <label class="field-group" id="lbl-ref-saturation"
                       >
                         <input
                           type="checkbox"
                           id="s-ref-saturation"
-                          style="width: auto; cursor: pointer; accent-color: var(--amber)"
+                          class="field-input accent-amber"
                         />
-                        <span>🔥 Carácter <span style="font-size:.65rem;color:var(--muted)">(opcional)</span></span>
+                        <span>🔥 Carácter <span class="note-small">(opcional)</span></span>
                       </label>
-                      <label style="display:flex;align-items:center;gap:0.4rem;font-size:0.75rem;cursor:pointer;margin-top:0.2rem">
+                      <label class="checkbox-row mt-sm">
                         <input
                           type="checkbox"
                           id="s-ref-ms-eq"
                           checked=""
-                          style="width: auto; cursor: pointer; accent-color: var(--accent2, #06b6d4)"
+                          class="field-input accent2"
                         />
-                        <span>🎛 EQ M/S <span style="font-size:.65rem;color:var(--muted)">(Mid y Side independientes)</span></span>
+                        <span>🎛 EQ M/S <span class="note-small">(Mid y Side independientes)</span></span>
                       </label>
                     </div>
-                    <details style="margin-bottom: 0.6rem">
-                      <summary
-                        style="
-                          font-size: 0.7rem;
-                          color: var(--muted);
-                          cursor: pointer;
-                          margin-bottom: 0.45rem;
-                          user-select: none;
-                        "
-                      >
+                    <details class="mt-sm">
+                      <summary class="details-summary">
                         ⚙ Parámetros avanzados
                       </summary>
-                      <div style="margin-top: 0.45rem">
+                      <div class="mt-sm">
                         <div class="param">
                           <label>Máx. boost EQ</label>
                           <span class="val" id="v-ref-boost">6.0 dB</span>
@@ -466,9 +378,9 @@
                           <span class="val" id="v-ref-cut">-9.0 dB</span>
                           <input type="range" id="s-ref-cut" min="-24" max="0" step="0.5" value="-9" />
                         </div>
-                        <div class="param" style="margin-bottom: 0.35rem">
+                        <div class="param mb-sm">
                           <label>Método de ajuste EQ</label>
-                          <select id="s-ref-eqmethod" style="margin-top: 0.25rem">
+                          <select id="s-ref-eqmethod" class="mt-xs">
                             <option value="heuristic">Heurístico (rápido)</option>
                             <option value="ddsp">DDSP (descenso de gradiente)</option>
                           </select>
@@ -478,43 +390,34 @@
                           <span class="val" id="v-ref-dynmargin">1.0 dB</span>
                           <input type="range" id="s-ref-dynmargin" min="0" max="6" step="0.5" value="1" />
                         </div>
-                        <div class="param" style="margin-bottom: 0.25rem">
+                        <div class="param mb-xs">
                           <label>Intensidad match estéreo</label>
                           <span class="val" id="v-ref-stereoblend">85%</span>
                           <input type="range" id="s-ref-stereoblend" min="0" max="100" step="5" value="85" />
                         </div>
-                        <div style="margin-top:0.7rem;border-top:1px solid var(--border);padding-top:0.5rem">
-                          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.4rem">
-                            <span style="font-size:0.68rem;color:var(--muted);text-transform:uppercase;letter-spacing:.08em">🎛 Bandas de EQ manual</span>
-                            <div style="display:flex;align-items:center;gap:0.5rem">
-                              <span style="font-size:0.65rem;color:var(--muted)">Bandas:</span>
-                              <input type="range" id="s-band-count" min="4" max="28" step="1" value="7"
-                                style="width:70px;accent-color:var(--accent2,#06b6d4)" />
-                              <span id="v-band-count" style="font-size:0.7rem;font-family:var(--mono);color:var(--accent2,#06b6d4);min-width:1.5rem">7</span>
+                        <div class="section-divider mt-lg">
+                          <div class="section-title-row">
+                            <span class="section-subtitle">🎛 Bandas de EQ manual</span>
+                            <div class="inline-row">
+                              <span class="note-mini">Bandas:</span>
+                              <input type="range" id="s-band-count" min="4" max="28" step="1" value="7" class="range-compact accent2" />
+                              <span id="v-band-count" class="range-value">7</span>
                             </div>
                           </div>
-                          <div id="ref-band-controls" style="display:flex;flex-direction:column;gap:0.1rem"></div>
-                          <button id="btn-band-reset" style="font-size:0.65rem;color:var(--muted);background:none;border:1px solid var(--border);border-radius:4px;padding:0.15rem 0.5rem;cursor:pointer;margin-top:0.3rem">↺ Resetear bandas</button>
+                          <div id="ref-band-controls" class="stack-col"></div>
+                          <button id="btn-band-reset" class="btn btn-tertiary">↺ Resetear bandas</button>
                         </div>
                       </div>
                     </details>
 
-                    <details style="margin-bottom: 0.6rem">
-                      <summary
-                        style="
-                          font-size: 0.7rem;
-                          color: var(--amber);
-                          cursor: pointer;
-                          margin-bottom: 0.45rem;
-                          user-select: none;
-                        "
-                      >
+                    <details class="mt-sm">
+                      <summary class="details-summary details-summary--accent">
                         💎 Funciones premium para match profesional
                       </summary>
-                      <div style="margin-top:0.45rem;border:1px solid rgba(245,158,11,.25);border-radius:8px;padding:0.65rem;background:linear-gradient(180deg,rgba(245,158,11,.08),rgba(255,255,255,.02))">
-                        <div class="param" style="margin-bottom:0.45rem">
+                      <div class="section-divider--highlight">
+                        <div class="param param--md">
                           <label>Perfil de matching</label>
-                          <select id="s-ref-premium-profile" style="margin-top:0.25rem">
+                          <select id="s-ref-premium-profile" class="mt-xs">
                             <option value="balanced">Balanceado / streaming</option>
                             <option value="club">Club punchy</option>
                             <option value="audiophile">Audiophile transparente</option>
@@ -522,11 +425,11 @@
                           </select>
                         </div>
 
-                        <label style="display:flex;align-items:center;gap:0.4rem;font-size:0.72rem;cursor:pointer;margin:0.35rem 0">
-                          <input type="checkbox" id="s-ref-adaptive-loudness" checked style="width:auto;cursor:pointer;accent-color:var(--amber)" />
-                          <span>👂 LUFS adaptativo al oído humano <span style="font-size:.65rem;color:var(--muted)">(más sensible 3–6 kHz)</span></span>
+                        <label class="checkbox-row">
+                          <input type="checkbox" id="s-ref-adaptive-loudness" checked class="field-input accent-amber" />
+                          <span>👂 LUFS adaptativo al oído humano <span class="note-mini">(más sensible 3–6 kHz)</span></span>
                         </label>
-                        <div class="param" style="margin-bottom:0.45rem">
+                        <div class="param param--md">
                           <label>Sensibilidad auditiva 3–6 kHz</label>
                           <span class="val" id="v-ref-loudness-sensitivity">65%</span>
                           <input
@@ -539,11 +442,11 @@
                             oninput="document.getElementById('v-ref-loudness-sensitivity').textContent = this.value + '%'"
                           />
                         </div>
-                        <label style="display:flex;align-items:center;gap:0.4rem;font-size:0.72rem;cursor:pointer;margin:0.35rem 0">
-                          <input type="checkbox" id="s-ref-fixed-lufs" style="width:auto;cursor:pointer;accent-color:var(--amber)" />
-                          <span>🎯 Fijar LUFS de salida <span style="font-size:.65rem;color:var(--muted)">(ignora el loudness de la referencia)</span></span>
+                        <label class="checkbox-row">
+                          <input type="checkbox" id="s-ref-fixed-lufs" class="field-input accent-amber" />
+                          <span>🎯 Fijar LUFS de salida <span class="note-mini">(ignora el loudness de la referencia)</span></span>
                         </label>
-                        <div class="param" id="fixed-lufs-row" style="margin-bottom:0.45rem">
+                        <div class="param param--md" id="fixed-lufs-row">
                           <label>LUFS objetivo</label>
                           <span class="val" id="v-ref-fixed-lufs">-14.0</span>
                           <input
@@ -555,9 +458,9 @@
                             value="-14"
                             oninput="document.getElementById('v-ref-fixed-lufs').textContent = this.value"
                           />
-                          <p style="font-size:0.65rem;color:var(--muted);margin:0.15rem 0 0">Si la referencia viene muy hot (-8/-7/-9 LUFS) y no la querés heredar, activá esto — el resto del matching (EQ, dinámica, estéreo) sigue igual, solo el volumen final queda fijo acá.</p>
+                          <p class="note-mini">Si la referencia viene muy hot (-8/-7/-9 LUFS) y no la querés heredar, activá esto — el resto del matching (EQ, dinámica, estéreo) sigue igual, solo el volumen final queda fijo acá.</p>
                         </div>
-                        <div class="param" style="margin-bottom:0.45rem">
+                        <div class="param param--md">
                           <label>Techo de loudness (máximo) <span style="font-size:.65rem;color:var(--muted)">nunca lo supera, sea cual sea la referencia</span></label>
                           <span class="val" id="v-ref-max-lufs">-12.0</span>
                           <input
@@ -569,36 +472,36 @@
                             value="-12"
                             oninput="document.getElementById('v-ref-max-lufs').textContent = this.value"
                           />
-                          <p style="font-size:0.65rem;color:var(--muted);margin:0.15rem 0 0">El match siempre intenta llegar al LUFS de la referencia, pero nunca lo cruza — así controlás cuánto "hot" querés sin importar qué tan comprimida venga la referencia. -18 = conservador/dinámico · -6 = muy hot.</p>
+                          <p class="note-mini">El match siempre intenta llegar al LUFS de la referencia, pero nunca lo cruza — así controlás cuánto "hot" querés sin importar qué tan comprimida venga la referencia. -18 = conservador/dinámico · -6 = muy hot.</p>
                         </div>
-                        <label style="display:flex;align-items:center;gap:0.4rem;font-size:0.72rem;cursor:pointer;margin:0.35rem 0">
-                          <input type="checkbox" id="s-ref-vocal-protect" checked style="width:auto;cursor:pointer;accent-color:var(--amber)" />
+                        <label class="checkbox-row">
+                          <input type="checkbox" id="s-ref-vocal-protect" checked class="field-input accent-amber" />
                           <span>🛡 Proteger voz líder y centro mono</span>
                         </label>
-                        <label style="display:flex;align-items:center;gap:0.4rem;font-size:0.72rem;cursor:pointer;margin:0.35rem 0">
-                          <input type="checkbox" id="s-ref-translation-check" checked style="width:auto;cursor:pointer;accent-color:var(--amber)" />
+                        <label class="checkbox-row">
+                          <input type="checkbox" id="s-ref-translation-check" checked class="field-input accent-amber" />
                           <span>📱 Chequeo de traducción: mono, auriculares y parlantes chicos</span>
                         </label>
-                        <label style="display:flex;align-items:center;gap:0.4rem;font-size:0.72rem;cursor:pointer;margin:0.35rem 0 0">
-                          <input type="checkbox" id="s-ref-alt-versions" style="width:auto;cursor:pointer;accent-color:var(--amber)" />
+                        <label class="checkbox-row toggle-label toggle-label--tight">
+                          <input type="checkbox" id="s-ref-alt-versions" class="field-input accent-amber" />
                           <span>🧪 Preparar metadata para versiones alternativas (clean, instrumental, TV)</span>
                         </label>
-                        <p style="margin:0.5rem 0 0;color:var(--muted);font-size:0.65rem;line-height:1.45">
+                        <p class="note-mini">
                           Estas opciones viajan al backend y quedan registradas en el reporte del job para habilitar flujos premium auditables.
                         </p>
                       </div>
                     </details>
-                    <details style="margin-bottom:0.5rem">
-                      <summary style="font-size:0.72rem;color:var(--muted);cursor:pointer;user-select:none;letter-spacing:0.05em;text-transform:uppercase">⚙ EQ avanzado</summary>
-                      <div style="margin-top:0.5rem">
+                    <details class="param param--lg">
+                      <summary class="details-summary">⚙ EQ avanzado</summary>
+                      <div class="mt-sm">
                         <div class="param">
                           <label>Pasadas EQ iterativo <span id="v-ref-eq-passes">3</span></label>
                           <input type="range" id="s-ref-eq-passes" min="1" max="4" step="1" value="3"
                             oninput="document.getElementById('v-ref-eq-passes').textContent=this.value" />
-                          <p style="font-size:0.65rem;color:var(--muted);margin:0.15rem 0 0">1 = pasada única (anterior), 3 = recomendado, 4 = máximo</p>
+                          <p class="note-mini">1 = pasada única (anterior), 3 = recomendado, 4 = máximo</p>
                         </div>
-                        <label style="display:flex;align-items:center;gap:0.4rem;font-size:0.72rem;cursor:pointer;margin:0.35rem 0">
-                          <input type="checkbox" id="s-ref-match-crest" checked style="width:auto;cursor:pointer;accent-color:var(--accent2)" />
+                        <label class="checkbox-row">
+                          <input type="checkbox" id="s-ref-match-crest" checked class="field-input accent2" />
                           <span>📐 Igualar crest factor (dinámica percibida) por banda</span>
                         </label>
                         <div class="param" id="crest-amount-row">
@@ -606,8 +509,8 @@
                           <input type="range" id="s-ref-crest-amount" min="0" max="100" step="5" value="75"
                             oninput="document.getElementById('v-ref-crest-amount').textContent=this.value" />
                         </div>
-                        <label style="display:flex;align-items:center;gap:0.4rem;font-size:0.72rem;cursor:pointer;margin:0.35rem 0">
-                          <input type="checkbox" id="s-ref-spectral-dynamics" checked style="width:auto;cursor:pointer;accent-color:var(--accent2)" />
+                        <label class="checkbox-row">
+                          <input type="checkbox" id="s-ref-spectral-dynamics" checked class="field-input accent2" />
                           <span>🎚 Igualar balance espectral por rango dinámico (suave vs fuerte)</span>
                         </label>
                         <div class="param">
@@ -619,15 +522,15 @@
                           <label>Rangos dinámicos <span id="v-ref-spectral-dyn-bins">4</span></label>
                           <input type="range" id="s-ref-spectral-dyn-bins" min="2" max="4" step="1" value="4"
                             oninput="document.getElementById('v-ref-spectral-dyn-bins').textContent=this.value" />
-                          <p style="font-size:0.65rem;color:var(--muted);margin:0.15rem 0 0">2 = suave/fuerte · 4 = cuartiles</p>
+                          <p class="note-mini">2 = suave/fuerte · 4 = cuartiles</p>
                         </div>
                       </div>
                     </details>
-                    <details style="margin-bottom:0.5rem">
-                      <summary style="font-size:0.72rem;color:var(--muted);cursor:pointer;user-select:none;letter-spacing:0.05em;text-transform:uppercase">🎸 Parallel &amp; Saturación</summary>
-                      <div style="margin-top:0.5rem">
-                        <label style="display:flex;align-items:center;gap:0.4rem;font-size:0.72rem;cursor:pointer;margin:0.35rem 0">
-                          <input type="checkbox" id="s-ref-parallel-comp" style="width:auto;cursor:pointer;accent-color:var(--accent2)" />
+                    <details class="param param--lg">
+                      <summary class="details-summary">🎸 Parallel &amp; Saturación</summary>
+                      <div class="mt-sm">
+                        <label class="checkbox-row">
+                          <input type="checkbox" id="s-ref-parallel-comp" class="field-input accent2" />
                           <span>🔀 Parallel compression (New York)</span>
                         </label>
                         <div class="param">
@@ -650,8 +553,8 @@
                           <input type="range" id="s-ref-parallel-makeup" min="0" max="18" step="0.5" value="6"
                             oninput="document.getElementById('v-ref-parallel-makeup').textContent=this.value" />
                         </div>
-                        <label style="display:flex;align-items:center;gap:0.4rem;font-size:0.72rem;cursor:pointer;margin:0.5rem 0 0.25rem">
-                          <input type="checkbox" id="s-ref-mb-sat" style="width:auto;cursor:pointer;accent-color:var(--accent2)" />
+                        <label class="checkbox-row">
+                          <input type="checkbox" id="s-ref-mb-sat" class="field-input accent2" />
                           <span>🔥 Saturación multibanda</span>
                         </label>
                         <div class="param">
@@ -676,14 +579,14 @@
                         </div>
                         <div class="param">
                           <label>Modo saturación</label>
-                          <select id="s-ref-mb-sat-mode" style="margin-top:0.2rem">
+                          <select id="s-ref-mb-sat-mode" class="mt-xs">
                             <option value="tape" selected>Tape (3er armónico)</option>
                             <option value="analog">Analog (2do+3er)</option>
                             <option value="tube">Tube (2do armónico)</option>
                           </select>
                         </div>
-                        <label style="display:flex;align-items:center;gap:0.4rem;font-size:0.72rem;cursor:pointer;margin:0.5rem 0 0.25rem">
-                          <input type="checkbox" id="s-ref-two-stage-lim" checked style="width:auto;cursor:pointer;accent-color:var(--accent2)" />
+                        <label class="checkbox-row">
+                          <input type="checkbox" id="s-ref-two-stage-lim" checked class="field-input accent2" />
                           <span>⛔ Limitador dos etapas (gentle + brickwall)</span>
                         </label>
                         <div class="param">
@@ -699,66 +602,39 @@
                       </div>
                     </details>
                     <button
-                      class="btn btn-ref"
+                      class="btn btn-ref btn-block"
                       id="btnMasterRef"
                       disabled=""
-                      style="
-                        width: 100%;
-                        padding: 0.5rem;
-                        border: none;
-                        border-radius: 6px;
-                        font-family: var(--sans);
-                        font-size: 0.8rem;
-                        font-weight: 600;
-                        cursor: pointer;
-                        letter-spacing: 0.02em;
-                      "
                     >
                       🎯 Masterizar con referencia
                     </button>
                     <button
-                      class="btn"
+                      class="btn btn-secondary btn-block"
                       id="btnRefPreview"
                       disabled=""
-                      style="
-                        width: 100%;
-                        padding: 0.45rem;
-                        border: none;
-                        border-radius: 6px;
-                        font-family: var(--sans);
-                        font-size: 0.75rem;
-                        font-weight: 600;
-                        cursor: pointer;
-                        letter-spacing: 0.02em;
-                        margin-top: 0.4rem;
-                        background: var(--surface2, #1a1a2e);
-                        border: 1px solid var(--accent2, #06b6d4);
-                        color: var(--accent2, #06b6d4);
-                      "
                     >
                       ▶ Preview 10s (seg. 40)
                     </button>
                     <!-- Preview en tiempo real con referencia -->
-                    <div id="refPreviewPanel" style="display:none;margin-top:0.7rem">
-                      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.3rem">
-                        <span style="font-size:0.7rem;color:var(--muted)">Preview en tiempo real — seg. 40–50</span>
-                        <button id="btnRefPreviewStop" style="font-size:0.65rem;background:none;border:1px solid var(--border);border-radius:4px;padding:0.1rem 0.4rem;cursor:pointer;color:var(--muted)">■ Stop</button>
+                    <div id="refPreviewPanel" class="hidden-panel mt-lg">
+                      <div class="section-title-row section-title-row--compact">
+                        <span class="note-mini">Preview en tiempo real — seg. 40–50</span>
+                        <button id="btnRefPreviewStop" class="btn btn-tertiary">■ Stop</button>
                       </div>
 
                       <!-- Métricas en tiempo real -->
-                      <div style="display:flex;gap:0.5rem;flex-wrap:wrap;font-size:0.68rem;font-family:var(--mono)">
+                      <div class="dash-metrics-row">
                         <span>LUFS <b id="rp-lufs">--</b></span>
                         <span>Peak <b id="rp-peak">--</b></span>
                         <span>RMS <b id="rp-rms">--</b></span>
                         <span>Corr <b id="rp-corr">--</b></span>
                       </div>
                       <!-- Curva EQ del matching -->
-                      <div id="refEqCurveWrap" style="margin-top:0.4rem;display:none">
-                        <div style="font-size:0.65rem;color:var(--muted);margin-bottom:0.2rem">Curva EQ de matching aplicada</div>
-                        <canvas id="refEqCurveCanvas" width="320" height="50"
-                          style="width:100%;height:50px;background:var(--surface2,#0d0d1a);border-radius:5px;display:block"></canvas>
+                      <div id="refEqCurveWrap" class="hidden-panel mt-sm">
+                        <div class="note-small mb-sm">Curva EQ de matching aplicada</div>
+                        <canvas id="refEqCurveCanvas" width="320" height="50" class="canvas-block"></canvas>
                       </div>
-                      <div id="rp-status" style="font-size:0.65rem;color:var(--muted);margin-top:0.3rem"></div>
+                      <div id="rp-status" class="note-mini mt-sm"></div>
                     </div>
                   </div>
                 </details>
@@ -779,20 +655,11 @@
                     <span class="stage-num">0</span>
                     🎙️ Reducción de Ruido
                   </div>
-                  <label
-                    style="
-                      display: flex;
-                      align-items: center;
-                      gap: 0.45rem;
-                      font-size: 0.76rem;
-                      margin-bottom: 0.75rem;
-                      cursor: pointer;
-                    "
-                  >
-                    <input type="checkbox" id="s-nr-bypass" checked="" style="width: auto; cursor: pointer" />
+                  <label class="toggle-label">
+                    <input type="checkbox" id="s-nr-bypass" checked="" class="field-input" />
                     Bypass reducción de ruido
                   </label>
-                  <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.65rem">
+                  <div class="control-row-wide">
                     <div>
                       <label class="param-label">Intensidad</label>
                       <input
@@ -862,17 +729,8 @@
                         <span class="val" id="v-hp">30 Hz</span>
                         <input type="range" id="s-hp" min="20" max="500" step="5" value="30" />
                       </div>
-                      <label
-                        style="
-                          display: flex;
-                          align-items: center;
-                          gap: 0.45rem;
-                          font-size: 0.76rem;
-                          margin-bottom: 0.25rem;
-                          cursor: pointer;
-                        "
-                      >
-                        <input type="checkbox" id="s-lp-bypass" checked="" style="width: auto; cursor: pointer" />
+                      <label class="toggle-label toggle-label--tight">
+                        <input type="checkbox" id="s-lp-bypass" checked="" class="field-input" />
                         Bypass low-pass
                       </label>
                       <div class="param">
@@ -881,7 +739,7 @@
                         <input type="range" id="s-lp-cutoff" min="1000" max="22000" step="100" value="18000" />
                       </div>
 
-                      <div class="section-label" style="margin-top: 0.75rem">
+                      <div class="section-label mt-lg">
                         <span class="stage-num">3</span>
                         EQ correctiva / cirugía
                       </div>
@@ -943,19 +801,9 @@
                       </div>
 
                       <!-- Dynamic EQ resonancias — etapa 3 -->
-                      <div class="section-label" style="margin-top: 0.75rem">
+                      <div class="section-label" class="space-top-sm">
                         🔎 Dynamic EQ — Resonancias
-                        <label
-                          style="
-                            font-size: 0.65rem;
-                            font-weight: 400;
-                            margin-left: auto;
-                            display: flex;
-                            align-items: center;
-                            gap: 0.28rem;
-                            cursor: pointer;
-                          "
-                        >
+                        <label class="toggle-label-right">
                           <input type="checkbox" id="s-reso-bypass" checked="" />
                           Bypass
                         </label>
@@ -997,19 +845,9 @@
                       </div>
 
                       <!-- Balance tonal automático (EQ inteligente sin referencia) — etapa 6 -->
-                      <div class="section-label" style="margin-top: 0.75rem">
+                      <div class="section-label" class="space-top-sm">
                         🎯 Balance tonal automático
-                        <label
-                          style="
-                            font-size: 0.65rem;
-                            font-weight: 400;
-                            margin-left: auto;
-                            display: flex;
-                            align-items: center;
-                            gap: 0.28rem;
-                            cursor: pointer;
-                          "
-                        >
+                        <label class="toggle-label-right">
                           <input type="checkbox" id="s-tonalbal-bypass" checked="" />
                           Bypass
                         </label>
@@ -1036,7 +874,7 @@
                       </div>
 
                       <!-- EQ tonal sweetening — etapa 6 -->
-                      <div class="section-label" style="margin-top: 0.75rem">
+                      <div class="section-label" class="space-top-sm">
                         <span class="stage-num">6</span>
                         EQ tonal / sweetening
                       </div>
@@ -1109,7 +947,7 @@
                       </div>
 
                       <!-- EQ Mode -->
-                      <div class="section-label" style="margin-top: 0.75rem">⚙️ Modo EQ</div>
+                      <div class="section-label" class="space-top-sm">⚙️ Modo EQ</div>
 <div class="param">
                         <label>Calidez / Cuerpo — Low Shelf Gain</label>
                         <span class="val" id="v-lowshelf">0 dB</span>
@@ -1120,7 +958,7 @@
                         <span class="val" id="v-lowshelf-freq">100 Hz</span>
                         <input type="range" id="s-lowshelf-freq" min="20" max="2000" step="10" value="100" />
                       </div>
-                      <select id="s-eq-mode" style="margin-bottom: 0.45rem">
+                      <select id="s-eq-mode" class="select-full">
                         <option value="iir" selected="">IIR — Zero Phase (por defecto)</option>
                         <option value="linear_phase">FIR — Fase Lineal</option>
                       </select>
@@ -1159,12 +997,12 @@
                       cursor: pointer;
                     "
                   >
-                    <input type="checkbox" id="s-mseq-bypass" checked="" style="width: auto; cursor: pointer" />
+                    <input type="checkbox" id="s-mseq-bypass" checked="" class="field-input" />
                     Bypass EQ M/S bandeada
                   </label>
-                  <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.65rem">
+                  <div class="control-row-wide">
                     <div>
-                      <div class="param-label" style="font-size: 0.72rem; font-weight: 600; margin-bottom: 0.18rem">
+                      <div class="param-label" class="param-label">
                         Mid
                       </div>
                       <div class="param">
@@ -1184,7 +1022,7 @@
                       </div>
                     </div>
                     <div>
-                      <div class="param-label" style="font-size: 0.72rem; font-weight: 600; margin-bottom: 0.18rem">
+                      <div class="param-label" class="param-label">
                         Side
                       </div>
                       <div class="param">
@@ -1215,12 +1053,12 @@
                       cursor: pointer;
                     "
                   >
-                    <input type="checkbox" id="s-mscomp-bypass" checked="" style="width: auto; cursor: pointer" />
+                    <input type="checkbox" id="s-mscomp-bypass" checked="" class="field-input" />
                     Bypass Compresor M/S
                   </label>
-                  <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.65rem">
+                  <div class="control-row-wide">
                     <div>
-                      <div class="param-label" style="font-size: 0.72rem; font-weight: 600; margin-bottom: 0.18rem">
+                      <div class="param-label" class="param-label">
                         Mid
                       </div>
                       <div class="param">
@@ -1260,16 +1098,16 @@
                         grid-column: 1 / -1;
                       "
                     >
-                      <input type="checkbox" id="s-mscomp-pdr" checked="" style="width: auto; cursor: pointer" />
+                      <input type="checkbox" id="s-mscomp-pdr" checked="" class="field-input" />
                       PDR (Program-Dependent Release, Mid + Side)
                     </label>
-                    <div class="param" style="grid-column: 1 / -1">
+                    <div class="param grid-full">
                       <label>PDR Hold</label>
                       <span class="val" id="v-mscomp-pdr-hold">500 ms</span>
                       <input type="range" id="s-mscomp-pdr-hold" min="50" max="2000" step="10" value="500" />
                     </div>
                     <div>
-                      <div class="param-label" style="font-size: 0.72rem; font-weight: 600; margin-bottom: 0.18rem">
+                      <div class="param-label" class="param-label">
                         Side
                       </div>
                       <div class="param">
@@ -1341,34 +1179,15 @@
                         <span class="val" id="v-cmakeup">+0.0 dB</span>
                         <input type="range" id="s-cmakeup" min="-12" max="24" step="0.5" value="0" />
                       </div>
-                      <label
-                        style="
-                          display: flex;
-                          align-items: center;
-                          gap: 0.45rem;
-                          font-size: 0.76rem;
-                          margin-bottom: 0.75rem;
-                          cursor: pointer;
-                        "
-                      >
-                        <input type="checkbox" id="s-comp-link" checked="" style="width: auto; cursor: pointer" />
+                      <label class="toggle-label">
+                        <input type="checkbox" id="s-comp-link" checked="" class="field-input" />
                         Stereo link L/R
                       </label>
 
-                      <div class="section-label" style="margin-top:0.75rem">
+                      <div class="section-label mt-lg">
                         <span class="stage-num">5b</span>
                         Compresión paralela (New York)
-                        <label
-                          style="
-                            font-size: 0.65rem;
-                            font-weight: 400;
-                            margin-left: auto;
-                            display: flex;
-                            align-items: center;
-                            gap: 0.28rem;
-                            cursor: pointer;
-                          "
-                        >
+                        <label class="toggle-label-right">
                           <input type="checkbox" id="parallelBypass" checked=""
                             onchange="
                               const off = this.checked;
@@ -1380,17 +1199,8 @@
                           Bypass
                         </label>
                       </div>
-<label
-                        style="
-                          display: flex;
-                          align-items: center;
-                          gap: 0.45rem;
-                          font-size: 0.76rem;
-                          margin-bottom: 0.35rem;
-                          cursor: pointer;
-                        "
-                      >
-                        <input type="checkbox" id="s-comp-pdr" checked="" style="width: auto; cursor: pointer" />
+                      <label class="toggle-label toggle-label--compact">
+                        <input type="checkbox" id="s-comp-pdr" checked="" class="field-input" />
                         PDR (Program-Dependent Release)
                       </label>
                       <div class="param">
@@ -1432,17 +1242,7 @@
                   <div class="section-label">
                     <span class="stage-num">7</span>
                     🎚 De-esser dedicado
-                    <label
-                      style="
-                        font-size: 0.65rem;
-                        font-weight: 400;
-                        margin-left: auto;
-                        display: flex;
-                        align-items: center;
-                        gap: 0.28rem;
-                        cursor: pointer;
-                      "
-                    >
+                    <label class="toggle-label-right">
                       <input type="checkbox" id="s-dyneq-bypass" checked="" />
                       Bypass
                     </label>
@@ -1487,19 +1287,9 @@
                 <!-- ── Etapa 8: Compresor Multibanda ── -->
                 <div class="mb-wrap" id="mbWrap">
                   <h3>
-                    <span class="stage-num" style="color: #d4c18d">8</span>
+                    <span class="stage-num stage-num--highlight">8</span>
                     🔊 Compresor Multibanda
-                    <label
-                      style="
-                        font-size: 0.65rem;
-                        font-weight: 400;
-                        margin-left: auto;
-                        display: flex;
-                        align-items: center;
-                        gap: 0.28rem;
-                        cursor: pointer;
-                      "
-                    >
+                    <label class="toggle-label-right">
                       <input type="checkbox" id="mb-bypass" checked="" />
                       Bypass
                     </label>
@@ -1558,7 +1348,7 @@
                       cursor: pointer;
                     "
                   >
-                    <input type="checkbox" id="s-mb-pdr" checked="" style="width: auto; cursor: pointer" />
+                    <input type="checkbox" id="s-mb-pdr" checked="" class="field-input" />
                     PDR (Program-Dependent Release, comparte config las 3 bandas)
                   </label>
                   <div class="param">
@@ -1656,7 +1446,7 @@
                     <span class="val" id="v-satmix">100%</span>
                     <input type="range" id="s-satmix" min="0" max="1.0" step="0.01" value="1.0" />
                   </div>
-                  <select id="s-satmode" style="margin-top: 0.25rem">
+                  <select id="s-satmode" class="mt-xs select-full">
                     <option value="tape">Tape (cálido)</option>
                     <option value="tube">Tube (válvula)</option>
                     <option value="analog">Analog (consola/cinta)</option>
@@ -1674,17 +1464,8 @@
                     <span class="val" id="v-width">1.2x</span>
                     <input type="range" id="s-width" min="0" max="3.0" step="0.05" value="1.2" />
                   </div>
-                  <label
-                    style="
-                      display: flex;
-                      align-items: center;
-                      gap: 0.45rem;
-                      font-size: 0.76rem;
-                      margin-bottom: 0.75rem;
-                      cursor: pointer;
-                    "
-                  >
-                    <input type="checkbox" id="s-enhancer" style="width: auto; cursor: pointer" />
+                  <label class="toggle-label">
+                    <input type="checkbox" id="s-enhancer" class="field-input" />
                     Stereo Enhancer (bass-mono + Haas)
                   </label>
                   <div class="param">
@@ -1709,20 +1490,9 @@
                   </div>
 
                   <!-- Multiband Stereo Width — etapa 11 -->
-                  <div class="section-label" style="margin-top: 0.75rem">
+                  <div class="section-label mt-lg">
                     🎛 Multiband Stereo Width
-                    <label
-                      style="
-                        font-size: 0.65rem;
-                        font-weight: 400;
-                        margin-left: auto;
-                        display: flex;
-                        align-items: center;
-                        gap: 0.28rem;
-                        cursor: pointer;
-                        float: right;
-                      "
-                    >
+                    <label class="toggle-label-right">
                       <input type="checkbox" id="mb-stereo-bypass" checked="" />
                       Bypass
                     </label>
@@ -1778,17 +1548,8 @@
                     <span class="stage-num">13</span>
                     Glue Compressor — bus final
                   </div>
-                  <label
-                    style="
-                      display: flex;
-                      align-items: center;
-                      gap: 0.45rem;
-                      font-size: 0.76rem;
-                      margin-bottom: 0.75rem;
-                      cursor: pointer;
-                    "
-                  >
-                    <input type="checkbox" id="s-glue-bypass" checked="" style="width: auto; cursor: pointer" />
+                  <label class="toggle-label">
+                    <input type="checkbox" id="s-glue-bypass" checked="" class="field-input" />
                     Bypass glue compressor
                   </label>
                   <div class="param">
@@ -1827,7 +1588,7 @@
                       cursor: pointer;
                     "
                   >
-                    <input type="checkbox" id="s-glue-pdr" checked="" style="width: auto; cursor: pointer" />
+                    <input type="checkbox" id="s-glue-pdr" checked="" class="field-input" />
                     PDR (Program-Dependent Release)
                   </label>
                   <div class="param">
@@ -1842,20 +1603,11 @@
                     <span class="stage-num">14</span>
                     ✂️ Clipper
                   </div>
-                  <label
-                    style="
-                      display: flex;
-                      align-items: center;
-                      gap: 0.45rem;
-                      font-size: 0.76rem;
-                      margin-bottom: 0.5rem;
-                      cursor: pointer;
-                    "
-                  >
-                    <input type="checkbox" id="s-clip-bypass" checked="" style="width: auto; cursor: pointer" />
+                  <label class="toggle-label toggle-label--compact">
+                    <input type="checkbox" id="s-clip-bypass" checked="" class="field-input" />
                     Bypass clipper
                   </label>
-                  <select id="s-clip-mode" style="margin-bottom: 0.5rem">
+                  <select id="s-clip-mode" class="select-full">
                     <option value="soft" selected="">Soft (tanh, musical)</option>
                     <option value="hard">Hard (corte duro)</option>
                   </select>
@@ -1869,9 +1621,9 @@
                     <span class="val" id="v-clip-drive">+0.0 dB</span>
                     <input type="range" id="s-clip-drive" min="0" max="24" step="0.5" value="0" />
                   </div>
-                  <p style="font-size: 0.72rem; color: var(--muted); margin-top: 0.25rem; line-height: 1.4">
+                  <div class="text-muted-body">
                     Le quita trabajo al limitador antes de que este entre a actuar.
-                  </p>
+                  </div>
                 </div>
 
                 <!-- ── Etapa 15: Normalización & Limiter ── -->
@@ -1889,17 +1641,8 @@
                         <span class="stage-num">15</span>
                         Normalización &amp; Limiter
                       </div>
-                      <label
-                        style="
-                          display: flex;
-                          align-items: center;
-                          gap: 0.45rem;
-                          font-size: 0.76rem;
-                          margin-bottom: 0.75rem;
-                          cursor: pointer;
-                        "
-                      >
-                        <input type="checkbox" id="s-uselufs" style="width: auto; cursor: pointer" />
+                      <label class="toggle-label">
+                        <input type="checkbox" id="s-uselufs" class="field-input" />
                         Normalizar por LUFS
                       </label>
                       <div class="param">
@@ -1932,24 +1675,24 @@
                     <span class="stage-num">16</span>
                     Salida &amp; Oversampling
                   </div>
-                  <select id="s-oversample" style="margin-bottom: 0.45rem">
+                  <select id="s-oversample" class="select-full">
                     <option value="off">Oversampling: off</option>
                     <option value="draft">Oversampling: draft</option>
                     <option value="fast">Oversampling: fast</option>
                     <option value="quality" selected="">Oversampling: quality</option>
                     <option value="ultra">Oversampling: ultra</option>
                   </select>
-                  <select id="s-format" style="margin-bottom: 0.45rem">
+                  <select id="s-format" class="select-full">
                     <option value="wav">WAV</option>
                     <option value="flac">FLAC</option>
                     <option value="mp3">MP3 320k</option>
                   </select>
-                  <select id="s-bitdepth" title="Bit depth de la salida WAV/FLAC">
+                  <select id="s-bitdepth" title="Bit depth de la salida WAV/FLAC" class="select-full">
                     <option value="16">16-bit (dither TPDF)</option>
                     <option value="24" selected="">24-bit (recomendado)</option>
                     <option value="32">32-bit float</option>
                   </select>
-                  <select id="s-dither-mode" title="Modo de dither / noise shaping al reducir bit depth">
+                  <select id="s-dither-mode" title="Modo de dither / noise shaping al reducir bit depth" class="select-full">
                     <option value="f_weighted" selected="">Dither: F-weighted (recomendado)</option>
                     <option value="high_shelf">Dither: High-shelf (simple)</option>
                     <option value="tpdf">Dither: TPDF plano</option>
@@ -1977,58 +1720,46 @@
                       cursor: pointer;
                     "
                   >
-                    <input type="checkbox" id="s-livepreview" style="width: auto; cursor: pointer" />
+                    <input type="checkbox" id="s-livepreview" class="field-input" />
                     Actualizar al mover
                   </label>
-                  <div style="font-size: 0.68rem; color: var(--muted); margin-bottom: 0.45rem; line-height: 1.4">
+                  <div class="text-muted-body">
                     Al activar, el archivo se procesa en tiempo real con cada cambio.
                   </div>
-                  <div
-                    id="previewStatus"
-                    style="font-family: var(--mono); font-size: 0.67rem; color: var(--muted); min-height: 1.1em"
+                  <div id="previewStatus" class="status-text"
                   >
                     En espera…
                   </div>
                 </div>
 
-                <div
-                  class="process-card"
-                  style="
-                    padding: 0.55rem;
-                    border-radius: 8px;
-                    background: linear-gradient(135deg, rgba(232, 160, 32, 0.07), rgba(255, 255, 255, 0.02));
-                    display: flex;
-                    flex-direction: column;
-                    gap: 0.3rem;
-                  "
-                >
-                  <button class="btn btn-automaster" id="btnAutoMaster" disabled="" style="display: none">
+                <div class="process-card process-card-accent">
+                  <button class="btn btn-automaster" id="btnAutoMaster" disabled="" class="hidden-panel">
                     🤖 Auto-Mastering IA
                   </button>
-                  <button class="btn btn-secondary" id="btnAiSuggest" disabled="" style="display: none">
+                  <button class="btn btn-secondary" id="btnAiSuggest" disabled="" class="hidden-panel">
                     🤖 Sugerir con IA (sin masterizar)
                   </button>
                   <button class="btn btn-primary" id="btnMaster" disabled="">▶ Masterizar</button>
-                  <div id="secondaryBtnGrid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.3rem">
-                    <button class="btn btn-secondary" id="btnAnalyzeGrid" disabled="" style="display: none">
+                  <div id="secondaryBtnGrid" class="grid-2cols-tight">
+                    <button class="btn btn-secondary" id="btnAnalyzeGrid" disabled="" class="hidden-panel">
                       🔍 Analizar
                     </button>
-                    <button class="btn btn-secondary" id="btnAdviceGrid" disabled="" style="display: none">
+                    <button class="btn btn-secondary" id="btnAdviceGrid" disabled="" class="hidden-panel">
                       💡 Consejos
                     </button>
-                    <button class="btn btn-secondary" id="btnSpectrum" disabled="" style="display: none">
+                    <button class="btn btn-secondary" id="btnSpectrum" disabled="" class="hidden-panel">
                       📊 Spectrum
                     </button>
                     <select
                       id="s-stems-mode"
                       title="Modo de separación de stems"
-                      style="grid-column: 1/-1; font-size: 0.72rem; padding: 0.3rem; margin-bottom: -0.2rem"
+                      class="select-full"
                     >
                       <option value="demucs_4stem" selected>🧬 Demucs — 4 stems (voz/batería/bajo/otros)</option>
                       <option value="vocals_hq">🎤 Roformer — solo voz/instrumental (mejor calidad de voz)</option>
                     </select>
-                    <button class="btn btn-secondary" id="btnStems" disabled="" style="display: none">🧬 Stems</button>
-                    <button class="btn btn-ab" id="btnAB" disabled="" style="display: none; grid-column: 1/-1">
+                    <button class="btn btn-secondary" id="btnStems" disabled="" class="hidden-panel">🧬 Stems</button>
+                    <button class="btn btn-ab hidden-panel grid-full" id="btnAB" disabled="">
                       ⚡ A/B
                     </button>
                   </div>
@@ -2038,7 +1769,7 @@
                     class="track-name-input"
                     placeholder="Nombre del tema para la descarga"
                     maxlength="120"
-                    style="display: none"
+                    class="hidden-panel"
                   />
                   <button class="btn btn-download" id="btnDownload">⬇ Descargar</button>
                   <button class="btn btn-report" id="btnReport">📄 Reporte JSON</button>
@@ -2172,7 +1903,7 @@
               </div>
             </div>
 
-            <div class="meters-wrap" id="metersWrap" style="display: none">
+            <div class="meters-wrap" id="metersWrap" class="hidden-panel">
               <h3>
                 Peak · RMS · LUFS · Stereo
                 <span class="meters-toggle" id="metersToggle">ocultar</span>
@@ -2180,37 +1911,37 @@
               <div id="metersBody">
                 <div class="meters-grid">
                   <div class="meter-col">
-                    <div class="meter-track"><div class="meter-fill" id="meterPeakFill" style="height: 0%"></div></div>
+                    <div class="meter-track"><div class="meter-fill" id="meterPeakFill"></div></div>
                     <div class="meter-name">Peak</div>
                     <div class="meter-readout" id="meterPeakReadout">-∞ dB</div>
                   </div>
                   <div class="meter-col">
-                    <div class="meter-track"><div class="meter-fill" id="meterRmsFill" style="height: 0%"></div></div>
+                    <div class="meter-track"><div class="meter-fill" id="meterRmsFill"></div></div>
                     <div class="meter-name">RMS</div>
                     <div class="meter-readout" id="meterRmsReadout">-∞ dB</div>
                   </div>
                   <div class="meter-col">
-                    <div class="meter-track"><div class="meter-fill" id="meterLufsFill" style="height: 0%"></div></div>
+                    <div class="meter-track"><div class="meter-fill" id="meterLufsFill"></div></div>
                     <div class="meter-name">LUFS</div>
                     <div class="meter-readout" id="meterLufsReadout">-∞</div>
                   </div>
                   <div class="meter-col">
-                    <div class="meter-track"><div class="meter-fill" id="meterTruePeakFill" style="height: 0%"></div></div>
+                    <div class="meter-track"><div class="meter-fill" id="meterTruePeakFill"></div></div>
                     <div class="meter-name">True Peak</div>
                     <div class="meter-readout" id="meterTruePeakReadout">-∞ dBTP</div>
                   </div>
                 </div>
-                <div style="margin-top: 0.7rem">
-                  <div class="meter-name" style="margin-bottom: 0.35rem">Stereo (correlación L/R)</div>
+                <div class="mt-lg">
+                  <div class="meter-name mb-sm">Stereo (correlación L/R)</div>
                   <div class="stereo-meter-track">
                     <div class="stereo-meter-center"></div>
-                    <div class="stereo-meter-fill" id="stereoMeterFill" style="left: 50%; width: 2px"></div>
+                    <div class="stereo-meter-fill" id="stereoMeterFill"></div>
                   </div>
-                  <div class="meter-readout" id="stereoMeterReadout" style="margin-top: 0.28rem">corr: --</div>
-                  <div class="meter-readout" id="monoCompatReadout" style="margin-top: 0.28rem">mono: -- dB</div>
+                  <div class="meter-readout mt-xxs" id="stereoMeterReadout">corr: --</div>
+                  <div class="meter-readout mt-xxs" id="monoCompatReadout">mono: -- dB</div>
                 </div>
-                <div style="margin-top: 0.7rem; border-top: 1px solid var(--border); padding-top: 0.7rem">
-                  <div class="meter-name" style="margin-bottom: 0.35rem">Espectro en tiempo real</div>
+                <div class="divider-top-lg">
+                  <div class="meter-name mb-sm">Espectro en tiempo real</div>
                   <div class="live-spectrum-wrap"><canvas id="liveSpectrumCanvas"></canvas></div>
                   <div class="freqbands-grid">
                     <div class="freqband-row">
@@ -2246,7 +1977,7 @@
                   </div>
                 </div>
                 <!-- Multiband GR -->
-                <div class="mb-gr-section" id="mbGrSection" style="display: none">
+                <div class="mb-gr-section" id="mbGrSection" class="hidden-panel">
                   <div class="mb-gr-title">Reducción de Ganancia Multibanda</div>
                   <div class="mb-gr-grid">
                     <div class="mb-gr-col">
@@ -2265,7 +1996,7 @@
                       <div class="mb-gr-readout" id="grReadHigh">0.0 dB</div>
                     </div>
                   </div>
-                  <div class="mb-gr-title" style="margin-top: 0.7rem">Dinámica (banda ancha), Paralela &amp; Glue</div>
+                  <div class="mb-gr-title mt-lg">Dinámica (banda ancha), Paralela &amp; Glue</div>
                   <div class="mb-gr-grid">
                     <div class="mb-gr-col">
                       <div class="mb-gr-label">Comp</div>
@@ -2283,7 +2014,7 @@
                       <div class="mb-gr-readout" id="grReadParallel">bypass</div>
                     </div>
                   </div>
-                  <div class="mb-gr-title" style="margin-top: 0.7rem">Compresor Mid/Side</div>
+                  <div class="mb-gr-title mt-lg">Compresor Mid/Side</div>
                   <div class="mb-gr-grid">
                     <div class="mb-gr-col">
                       <div class="mb-gr-label">Mid</div>
@@ -2296,7 +2027,7 @@
                       <div class="mb-gr-readout" id="grReadMsCompSide">bypass</div>
                     </div>
                   </div>
-                  <div class="mb-gr-title" style="margin-top: 0.7rem">De-esser &amp; Dynamic EQ (resonancias)</div>
+                  <div class="mb-gr-title mt-lg">De-esser &amp; Dynamic EQ (resonancias)</div>
                   <div class="mb-gr-grid">
                     <div class="mb-gr-col">
                       <div class="mb-gr-label">De-esser</div>
@@ -2346,7 +2077,7 @@
               <p>Subí un archivo de audio para ver el análisis y comenzar el mastering.</p>
             </div>
 
-            <div class="preview-wrap" id="previewWrap" style="display: none">
+            <div class="preview-wrap" id="previewWrap" class="hidden-panel">
               <div class="preview-header">
                 <div>
                   <h3>
@@ -2361,14 +2092,14 @@
                 </div>
                 <span class="preview-mode-badge" id="previewModeBadge">backend 10s</span>
               </div>
-              <div id="liveSpectrumWrap" class="preview-subsection" style="display: none;">
+              <div id="liveSpectrumWrap" class="preview-subsection hidden-panel">
                 <div class="preview-note-row">
                   <span class="preview-status-dot"></span>
                   <span>Analizador de espectro en vivo</span>
                 </div>
                 <canvas id="jobSpectrumCanvas" height="100" class="preview-spectrum-canvas" aria-label="Espectro en tiempo real, barras de frecuencia"></canvas>
               </div>
-              <div id="dynEqRecWrap" class="preview-subsection" style="display: none;">
+              <div id="dynEqRecWrap" class="preview-subsection hidden-panel">
                 <div
                   style="
                     font-size: 0.7rem;
