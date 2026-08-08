@@ -41,7 +41,7 @@ try:
     from .stem_analysis import analyze_stems_full
     from .system_monitor import get_system_stats
     from . import ai_assistant
-    from .config import UPLOAD_DIR, PROCESSED_DIR, STEMS_DIR, PROCESSED_TTL, MAX_FILE_SIZE, REFERENCE_LIBRARY_DIR
+    from .config import UPLOAD_DIR, PROCESSED_DIR, STEMS_DIR, PROCESSED_TTL, MAX_FILE_SIZE, REFERENCE_LIBRARY_DIR, STEM_LIBRARY_DIR
     from . import reference_library as ref_lib
 except ImportError:
     from mastering import (
@@ -62,7 +62,7 @@ except ImportError:
     from stem_analysis import analyze_stems_full
     from system_monitor import get_system_stats
     import ai_assistant
-    from config import UPLOAD_DIR, PROCESSED_DIR, STEMS_DIR, PROCESSED_TTL, MAX_FILE_SIZE, REFERENCE_LIBRARY_DIR
+    from config import UPLOAD_DIR, PROCESSED_DIR, STEMS_DIR, PROCESSED_TTL, MAX_FILE_SIZE, REFERENCE_LIBRARY_DIR, STEM_LIBRARY_DIR
     import reference_library as ref_lib
 
 logging.basicConfig(level=logging.INFO)
@@ -88,6 +88,7 @@ os.makedirs(PROCESSED_DIR, exist_ok=True)
 ref_lib.init(REFERENCE_LIBRARY_DIR)  # carga índice + arranca watcher
 os.makedirs(STEMS_DIR,     exist_ok=True)
 os.makedirs(LIBRARY_DIR,   exist_ok=True)
+os.makedirs(STEM_LIBRARY_DIR, exist_ok=True)
 
 jobs = JobService()
 audio_service = AudioService(upload_dir=UPLOAD_DIR)
@@ -2375,7 +2376,7 @@ async def master_normalize_sync(
 # ── Mix multistem ─────────────────────────────────────────────────────────────
 
 def run_mix_job(job_id: str, stem_paths: dict, sr: int,
-                stem_params: dict, mix_params_dict: dict):
+                stem_params: dict, mix_params_dict: dict, cleanup_paths: Optional[set] = None):
     """Job de mezcla y mastering multistem."""
     jobs.update_job(job_id, status="processing", progress=0, stage="Iniciando mezcla")
     try:
@@ -2422,8 +2423,8 @@ def run_mix_job(job_id: str, stem_paths: dict, sr: int,
         logger.error(f"run_mix_job error: {e}", exc_info=True)
         jobs.update_job(job_id, status="error", error=str(e))
     finally:
-        # Limpiar stems temporales
-        for path in stem_paths.values():
+        # Limpiar solo stems temporales de sesión; nunca borrar archivos persistentes de la librería.
+        for path in (set(stem_paths.values()) if cleanup_paths is None else cleanup_paths):
             try:
                 if os.path.exists(path):
                     os.remove(path)
@@ -2489,11 +2490,34 @@ async def mix_stems_endpoint(
             "poll_url": f"/job/{job_id}"}
 
 
+
+def _mix_session_stem_path(session_id: str, name: str) -> Optional[str]:
+    """Devuelve el path temporal de un stem subido a una sesión del mixer."""
+    import glob as _glob
+    matches = _glob.glob(os.path.join(UPLOAD_DIR, f"mix_{session_id}_{name}.*"))
+    return matches[0] if matches else None
+
+
+def _mix_library_stem_path(file_id: Optional[str]) -> Optional[str]:
+    """Devuelve el path persistente de un stem guardado en la librería del mixer."""
+    if not file_id:
+        return None
+    return library.get_path(STEM_LIBRARY_DIR, file_id)
+
+
+def _resolve_mix_stem_path(session_id: str, name: str, library_ids: Optional[dict] = None) -> Optional[str]:
+    """Resuelve un stem del mixer desde la librería persistente o desde la sesión temporal."""
+    library_path = _mix_library_stem_path((library_ids or {}).get(name))
+    if library_path:
+        return library_path
+    return _mix_session_stem_path(session_id, name)
+
 @app.post("/mix/upload-stem", tags=["Mixer"])
 async def mix_upload_stem(
     file: UploadFile = File(...),
     session_id: str = Form(..., description="ID de sesión del mixer para agrupar stems"),
     stem_name: str = Form("", description="Nombre del stem (opcional, usa el nombre del archivo si se omite)"),
+    save_to_library: bool = Form(False, description="Guarda una copia reutilizable en la librería de stems del mixer"),
 ):
     """Sube un stem individual para una sesión de mixer.
     El frontend puede subir stems de a uno y luego llamar a /mix/submit con el session_id.
@@ -2512,14 +2536,51 @@ async def mix_upload_stem(
     except Exception:
         duration = None
 
+    library_meta = None
+    if save_to_library:
+        library_meta = library.add_file(STEM_LIBRARY_DIR, file.filename, data)
+
     return {
         "session_id": session_id,
         "stem_name": name,
         "filename": file.filename,
         "path": path,
         "duration_sec": round(duration, 2) if duration else None,
+        "library_item": library_meta,
     }
 
+
+
+@app.get("/mix/stem-library", tags=["Mixer"])
+def mix_stem_library_list():
+    """Lista stems guardados para reutilizar en futuras sesiones del mixer."""
+    return {"files": library.list_files(STEM_LIBRARY_DIR)}
+
+
+@app.post("/mix/stem-library/upload", tags=["Mixer"])
+async def mix_stem_library_upload(file: UploadFile = File(...)):
+    """Guarda un stem directamente en la librería reutilizable del mixer."""
+    validate_audio_file(file.filename)
+    data = await read_and_validate(file)
+    return library.add_file(STEM_LIBRARY_DIR, file.filename, data)
+
+
+@app.get("/mix/stem-library/{file_id}/download", tags=["Mixer"])
+def mix_stem_library_download(file_id: str):
+    path = library.get_path(STEM_LIBRARY_DIR, file_id)
+    if path is None:
+        raise HTTPException(404, "Stem no encontrado en la librería del mixer.")
+    meta = library.get_meta(STEM_LIBRARY_DIR, file_id)
+    filename = meta["original_filename"] if meta else os.path.basename(path)
+    return FileResponse(path, media_type="application/octet-stream", filename=filename)
+
+
+@app.delete("/mix/stem-library/{file_id}", tags=["Mixer"])
+def mix_stem_library_delete(file_id: str):
+    ok = library.delete_file(STEM_LIBRARY_DIR, file_id)
+    if not ok:
+        raise HTTPException(404, "Stem no encontrado en la librería del mixer.")
+    return {"deleted": file_id}
 
 @app.post("/mix/submit", tags=["Mixer"])
 async def mix_submit(
@@ -2528,25 +2589,32 @@ async def mix_submit(
     stem_names: str = Form(..., description="JSON list de nombres de stems subidos"),
     stem_params: str = Form("{}", description="JSON: {nombre: StemParams}"),
     mix_params: str = Form("{}", description="JSON: MixParams"),
+    stem_library_ids: str = Form("{}", description="JSON opcional: {nombre: library_id} para stems reutilizables"),
     sr: int = Form(44100),
 ):
     """Inicia el job de mezcla con los stems ya subidos via /mix/upload-stem."""
-    import json as _json, glob as _glob
+    import json as _json
 
     try:
         names = _json.loads(stem_names)
         s_params_dict = _json.loads(stem_params)
         m_params_dict = _json.loads(mix_params)
+        library_ids = _json.loads(stem_library_ids or "{}")
     except Exception as e:
         raise HTTPException(400, f"JSON inválido: {e}")
 
-    # Reconstruir paths de los stems subidos
+    # Reconstruir paths desde librería persistente o desde uploads temporales de sesión.
     stem_paths = {}
+    cleanup_paths = set()
     for name in names:
-        matches = _glob.glob(os.path.join(UPLOAD_DIR, f"mix_{session_id}_{name}.*"))
-        if not matches:
-            raise HTTPException(404, f"Stem '{name}' no encontrado para session_id '{session_id}'.")
-        stem_paths[name] = matches[0]
+        library_path = _mix_library_stem_path((library_ids or {}).get(name))
+        session_path = _mix_session_stem_path(session_id, name)
+        path = library_path or session_path
+        if not path:
+            raise HTTPException(404, f"Stem '{name}' no encontrado para session_id '{session_id}' ni en librería.")
+        stem_paths[name] = path
+        if path == session_path:
+            cleanup_paths.add(path)
 
     if not stem_paths:
         raise HTTPException(400, "No se encontraron stems para esta sesión.")
@@ -2563,7 +2631,7 @@ async def mix_submit(
     })
 
     background_tasks.add_task(
-        run_mix_job, job_id, stem_paths, sr, s_params_dict, m_params_dict
+        run_mix_job, job_id, stem_paths, sr, s_params_dict, m_params_dict, cleanup_paths
     )
 
     return {"job_id": job_id, "status": "queued",
@@ -2590,6 +2658,7 @@ async def ws_mix_stream(websocket: WebSocket):
         config_msg = await websocket.receive_json()
         session_id = config_msg.get("session_id")
         stem_names = config_msg.get("stem_names") or []
+        stem_library_ids = config_msg.get("stem_library_ids") or {}
         stem_params_dict = config_msg.get("stem_params") or {}
         mix_params_dict = config_msg.get("mix_params") or {}
         chunk_seconds = float(config_msg.get("chunk_seconds", 1.0))
@@ -2600,22 +2669,21 @@ async def ws_mix_stream(websocket: WebSocket):
             await websocket.send_json({"event": "error", "message": "Falta session_id o stem_names."})
             return
 
-        import glob as _glob
-
         # ── Cargar (o reusar del caché) cada stem, ya recortado al preview ────
         stems: dict = {}
         for name in stem_names:
-            cache_key = f"mix_{session_id}_{name}"
+            library_id = stem_library_ids.get(name)
+            cache_key = f"mixlib_{library_id}" if library_id else f"mix_{session_id}_{name}"
             cached = audio_cache_get(cache_key)
             if cached is not None:
                 audio, file_sr = cached
             else:
-                matches = _glob.glob(os.path.join(UPLOAD_DIR, f"mix_{session_id}_{name}.*"))
-                if not matches:
-                    await websocket.send_json({"event": "error", "message": f"Stem '{name}' no encontrado (¿se subió?)."})
+                path = _resolve_mix_stem_path(session_id, name, stem_library_ids)
+                if not path:
+                    await websocket.send_json({"event": "error", "message": f"Stem '{name}' no encontrado (¿se subió o existe en librería?)."})
                     return
                 # librosa.load es CPU-bound → threadpool para no bloquear el event loop.
-                audio, file_sr = await run_in_threadpool(librosa.load, matches[0], sr=None, mono=False)
+                audio, file_sr = await run_in_threadpool(librosa.load, path, sr=None, mono=False)
                 if audio.ndim == 1:
                     audio = audio[np.newaxis, :]
                 audio = _crop_preview(audio, file_sr, preview_seconds)

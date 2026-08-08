@@ -8,6 +8,8 @@
   const mixerState = {
     sessionId: getGenUUID(),
     stems: {},
+    stemLibrary: [],
+    stemLibraryLoaded: false,
     jobId: null,
     polling: null,
   };
@@ -286,6 +288,7 @@
           ws.send(JSON.stringify({
             session_id: mixerState.sessionId,
             stem_names: names,
+            stem_library_ids: buildStemLibraryIdMap(names),
             stem_params: stemParams,
             mix_params: mixParamsPayload,
             chunk_seconds: 1.0,
@@ -502,6 +505,74 @@
     }
   }
 
+  // ── Stem library ──────────────────────────────────────────────────────────
+  function buildStemLibraryIdMap(names) {
+    const out = {};
+    names.forEach(n => {
+      const id = mixerState.stems[n]?.libraryId;
+      if (id) out[n] = id;
+    });
+    return out;
+  }
+
+  function normalizeStemName(name, fallback) {
+    const base = (name || fallback || 'stem').replace(/\.[^.]+$/, '').trim();
+    return base || 'stem';
+  }
+
+  async function refreshStemLibrary(force) {
+    if (mixerState.stemLibraryLoaded && !force) return mixerState.stemLibrary;
+    try {
+      const res = await fetch(`${getAPI()}/mix/stem-library`);
+      if (!res.ok) throw new Error(await res.text());
+      const data = await res.json();
+      mixerState.stemLibrary = data.files || [];
+      mixerState.stemLibraryLoaded = true;
+    } catch (err) {
+      console.warn('No se pudo cargar la librería de stems:', err);
+      mixerState.stemLibrary = [];
+    }
+    renderMixerSidePanel();
+    return mixerState.stemLibrary;
+  }
+
+  async function addStemFromLibrary(item) {
+    const stemName = normalizeStemName(item.original_filename, item.id);
+    if (mixerState.stems[stemName] && !confirm(`Ya existe "${stemName}". ¿Reemplazar?`)) return;
+    mixerState.stems[stemName] = {
+      file: null,
+      params: defaultStemParams(stemName),
+      uploaded: true,
+      duration: item.duration_sec,
+      libraryId: item.id,
+      libraryName: item.original_filename,
+    };
+    addChannelToDOM(stemName);
+    try {
+      const res = await fetch(`${getAPI()}/mix/stem-library/${item.id}/download`);
+      if (!res.ok) throw new Error(await res.text());
+      const blob = await res.blob();
+      blob.name = item.original_filename || `${stemName}.wav`;
+      await decodeStemForPreview(stemName, blob);
+      document.getElementById('mixerSubmitBtn')?.removeAttribute('disabled');
+      scheduleServerPreview();
+    } catch (err) {
+      console.warn('No se pudo preparar preview local del stem guardado:', err);
+    }
+  }
+
+  async function deleteStemFromLibrary(item) {
+    if (!confirm(`¿Borrar "${item.original_filename}" de la librería de stems?`)) return;
+    try {
+      const res = await fetch(`${getAPI()}/mix/stem-library/${item.id}`, { method: 'DELETE' });
+      if (!res.ok) throw new Error(await res.text());
+      mixerState.stemLibrary = mixerState.stemLibrary.filter(x => x.id !== item.id);
+      renderMixerSidePanel();
+    } catch (err) {
+      alert('No se pudo borrar el stem: ' + err.message);
+    }
+  }
+
   // ── Render ────────────────────────────────────────────────────────────────
   function renderMixer() {
     renderMixerContent();
@@ -519,6 +590,7 @@
       <div class="mxr-toolbar">
         <button class="btn btn-sm" id="mixerAddStemBtn">＋ Stem</button>
         <button class="btn btn-sm" id="mixerAddMultiBtn">📂 Multi</button>
+        <button class="btn btn-sm" id="mixerLibraryBtn">📚 Librería</button>
         <input type="file" id="mixerFileInput" accept=".wav,.mp3,.flac,.ogg,.aiff,.aif" style="display:none">
         <input type="file" id="mixerMultiInput" accept=".wav,.mp3,.flac,.ogg,.aiff,.aif" multiple style="display:none">
         <span class="mxr-title-tag">🎚 ${stemNames.length} stem${stemNames.length!==1?'s':''}</span>
@@ -536,7 +608,10 @@
             <div class="mxr-empty-icon">🎚</div>
             <div class="mxr-empty-title">Arrastrá stems acá o usá los botones</div>
             <div class="mxr-empty-sub">WAV · MP3 · FLAC · OGG · AIFF — hasta 200MB</div>
-            <button class="btn btn-primary" style="margin-top:1rem" id="mxrDropBtn">＋ Elegir archivos</button>
+            <div style="display:flex;gap:.5rem;margin-top:1rem;flex-wrap:wrap;justify-content:center">
+              <button class="btn btn-primary" id="mxrDropBtn">＋ Elegir archivos</button>
+              <button class="btn btn-ref" id="mxrEmptyLibraryBtn">📚 Usar librería</button>
+            </div>
           </div>
         ` : `
           <div class="mxr-channels" id="mixerChannels">
@@ -610,7 +685,10 @@
             <div class="mxr-empty-icon">🎚</div>
             <div class="mxr-empty-title">Arrastrá stems acá o usá los botones</div>
             <div class="mxr-empty-sub">WAV · MP3 · FLAC · OGG · AIFF — hasta 200MB</div>
-            <button class="btn btn-primary" style="margin-top:1rem" id="mxrDropBtn">＋ Elegir archivos</button>
+            <div style="display:flex;gap:.5rem;margin-top:1rem;flex-wrap:wrap;justify-content:center">
+              <button class="btn btn-primary" id="mxrDropBtn">＋ Elegir archivos</button>
+              <button class="btn btn-ref" id="mxrEmptyLibraryBtn">📚 Usar librería</button>
+            </div>
           </div>`;
         document.getElementById('mxrDropBtn')?.addEventListener('click', () => {
           document.getElementById('mixerFileInput')?.click();
@@ -656,6 +734,21 @@
         </button>
         <div id="mixerStatus" class="mxr-status"></div>
       </div>
+      <div class="mxr-side-section mxr-stem-library">
+        <div class="mxr-side-label">Librería de stems</div>
+        <div class="mxr-library-actions">
+          <button class="btn btn-sm" id="mxrRefreshLibraryBtn">↻ Actualizar</button>
+          <span class="mxr-status">Se guardan stems nuevos automáticamente</span>
+        </div>
+        ${mixerState.stemLibrary.length===0
+          ? '<div style="color:var(--muted);font-size:.72rem">Sin stems guardados</div>'
+          : mixerState.stemLibrary.slice(0, 8).map(item => `
+            <div class="mxr-library-row">
+              <button class="btn btn-xs mxr-library-add" data-library-id="${item.id}">＋</button>
+              <span class="mxr-stems-name" title="${item.original_filename}">${item.original_filename}</span>
+              <button class="mxr-library-del" data-library-id="${item.id}" title="Borrar de librería">✕</button>
+            </div>`).join('')}
+      </div>
       <div class="mxr-side-section mxr-stems-list">
         <div class="mxr-side-label">Stems (${stemNames.length})</div>
         ${stemNames.length===0
@@ -688,6 +781,15 @@
 
     document.getElementById('mix-normalize')?.addEventListener('change', scheduleServerPreview);
     document.getElementById('mixerSubmitBtn')?.addEventListener('click', submitMix);
+    document.getElementById('mxrRefreshLibraryBtn')?.addEventListener('click', () => refreshStemLibrary(true));
+    document.querySelectorAll('.mxr-library-add').forEach(btn => btn.addEventListener('click', () => {
+      const item = mixerState.stemLibrary.find(x => x.id === btn.dataset.libraryId);
+      if (item) addStemFromLibrary(item);
+    }));
+    document.querySelectorAll('.mxr-library-del').forEach(btn => btn.addEventListener('click', () => {
+      const item = mixerState.stemLibrary.find(x => x.id === btn.dataset.libraryId);
+      if (item) deleteStemFromLibrary(item);
+    }));
     document.getElementById('mxrServerPreviewToggle')?.addEventListener('change', e => {
       serverPreview.enabled = e.target.checked;
       const audioEl = document.getElementById('mxrServerPreviewAudio');
@@ -875,6 +977,9 @@
       if (e.target.closest('#mixerAddMultiBtn')) {
         document.getElementById('mixerMultiInput')?.click(); return;
       }
+      if (e.target.closest('#mixerLibraryBtn') || e.target.closest('#mxrEmptyLibraryBtn')) {
+        refreshStemLibrary(true); return;
+      }
       if (e.target.closest('#mixerClearBtn')) {
         if (!Object.keys(mixerState.stems).length || confirm('¿Limpiar todos los stems?')) {
           resetPreviewEngine();
@@ -1004,12 +1109,17 @@
     decodeStemForPreview(stemName, file);
     try {
       const fd = new FormData();
-      fd.append('file', file); fd.append('session_id', mixerState.sessionId); fd.append('stem_name', stemName);
+      fd.append('file', file); fd.append('session_id', mixerState.sessionId); fd.append('stem_name', stemName); fd.append('save_to_library', 'true');
       const res = await fetch(`${getAPI()}/mix/upload-stem`, { method:'POST', body:fd });
       if (!res.ok) throw new Error(await res.text());
       const data = await res.json();
       mixerState.stems[stemName].uploaded = true;
       mixerState.stems[stemName].duration = data.duration_sec;
+      if (data.library_item) {
+        mixerState.stems[stemName].libraryId = data.library_item.id;
+        mixerState.stemLibraryLoaded = false;
+        refreshStemLibrary(true);
+      }
       document.querySelector(`#ch-${CSS.escape(stemName)} .mxr-ch-uploading`)?.remove();
       renderMixerSidePanel();
       document.getElementById('mixerSubmitBtn')?.removeAttribute('disabled');
@@ -1048,6 +1158,7 @@
       fd.append('stem_names',  JSON.stringify(stemNames));
       fd.append('stem_params', JSON.stringify(stemParams));
       fd.append('mix_params',  JSON.stringify(mixParams));
+      fd.append('stem_library_ids', JSON.stringify(buildStemLibraryIdMap(stemNames)));
 
       const res = await fetch(`${getAPI()}/mix/submit`, { method: 'POST', body: fd });
       if (!res.ok) {
@@ -1179,6 +1290,7 @@
       mixArea.style.display = 'flex';
       if (!mixArea.firstChild) renderMixer();
       bindMixerEvents();
+      refreshStemLibrary(false);
     }
     document.querySelector('.content')?.classList.add('content--mixer');
     document.body.classList.add('mode-mixer');
@@ -1223,6 +1335,11 @@
       .mxr-stems-list { gap:.2rem; }
       .mxr-stems-row { display:flex;align-items:center;gap:.3rem;font-size:.7rem;padding:.1rem 0;border-bottom:1px solid var(--border2); }
       .mxr-stems-name { flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap; }
+      .mxr-library-actions { display:flex;align-items:center;gap:.35rem;flex-wrap:wrap; }
+      .mxr-library-row { display:flex;align-items:center;gap:.3rem;font-size:.7rem;padding:.14rem 0;border-bottom:1px solid var(--border2); }
+      .mxr-library-add { padding:.08rem .3rem;line-height:1; }
+      .mxr-library-del { background:none;border:none;color:var(--faint);cursor:pointer;padding:0 .15rem; }
+      .mxr-library-del:hover { color:var(--clip-red); }
 
       /* ── body.mode-mixer: content fills all space ── */
       body.mode-mixer .content { flex:1;overflow:hidden;display:flex;flex-direction:column; }
