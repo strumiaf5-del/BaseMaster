@@ -37,4 +37,4 @@ demucs-infer>=4.1.2
 # Separacion voz/instrumental de alta calidad (modo alternativo a Demucs)
 # via BS-RoFormer / Mel-Band RoFormer. Usa el mismo wrapper que UVR.
 # Instalar variante GPU si hay CUDA disponible: audio-separator[gpu]
-audio-separator[gpu]
+audio-separator[cpu]

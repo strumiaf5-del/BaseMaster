@@ -14,12 +14,14 @@ try:
     from .validation_utils import MAX_FILE_SIZE, coerce_ws_chain_params, validate_audio_file
     from .audio_cache import get as audio_cache_get, put as audio_cache_put
     from . import library
+    from .routers import create_dashboard_router, create_info_router, create_jobs_router, create_library_router, create_reference_library_router
 except ImportError:  # pragma: no cover - fallback for direct script execution
     from job_service import JobService
     from audio_service import AudioService
     from validation_utils import MAX_FILE_SIZE, coerce_ws_chain_params, validate_audio_file
     from audio_cache import get as audio_cache_get, put as audio_cache_put
     import library
+    from routers import create_dashboard_router, create_info_router, create_jobs_router, create_library_router, create_reference_library_router
 try:
     from .mastering import (
         process_audio, analyze_audio, spectrum_analysis_fft, mix_advice,
@@ -39,7 +41,7 @@ try:
     from .stem_analysis import analyze_stems_full
     from .system_monitor import get_system_stats
     from . import ai_assistant
-    from .config import UPLOAD_DIR, PROCESSED_DIR, STEMS_DIR, PROCESSED_TTL, MAX_FILE_SIZE, REFERENCE_LIBRARY_DIR
+    from .config import UPLOAD_DIR, PROCESSED_DIR, STEMS_DIR, PROCESSED_TTL, MAX_FILE_SIZE, REFERENCE_LIBRARY_DIR, STEM_LIBRARY_DIR
     from . import reference_library as ref_lib
 except ImportError:
     from mastering import (
@@ -60,7 +62,7 @@ except ImportError:
     from stem_analysis import analyze_stems_full
     from system_monitor import get_system_stats
     import ai_assistant
-    from config import UPLOAD_DIR, PROCESSED_DIR, STEMS_DIR, PROCESSED_TTL, MAX_FILE_SIZE, REFERENCE_LIBRARY_DIR
+    from config import UPLOAD_DIR, PROCESSED_DIR, STEMS_DIR, PROCESSED_TTL, MAX_FILE_SIZE, REFERENCE_LIBRARY_DIR, STEM_LIBRARY_DIR
     import reference_library as ref_lib
 
 logging.basicConfig(level=logging.INFO)
@@ -86,6 +88,7 @@ os.makedirs(PROCESSED_DIR, exist_ok=True)
 ref_lib.init(REFERENCE_LIBRARY_DIR)  # carga índice + arranca watcher
 os.makedirs(STEMS_DIR,     exist_ok=True)
 os.makedirs(LIBRARY_DIR,   exist_ok=True)
+os.makedirs(STEM_LIBRARY_DIR, exist_ok=True)
 
 jobs = JobService()
 audio_service = AudioService(upload_dir=UPLOAD_DIR)
@@ -134,6 +137,38 @@ async def resolve_input_source(file: Optional[UploadFile], library_id: Optional[
     validate_audio_file(file.filename)
     data = await read_and_validate(file)
     return data, file.filename
+
+
+app.include_router(create_info_router(
+    app=app,
+    jobs=jobs,
+    upload_dir=UPLOAD_DIR,
+    processed_dir=PROCESSED_DIR,
+    stems_dir=STEMS_DIR,
+    max_file_size=MAX_FILE_SIZE,
+    mastering_presets=MASTERING_PRESETS,
+    get_preset=get_preset,
+    platform_loudness_targets=PLATFORM_LOUDNESS_TARGETS,
+))
+app.include_router(create_library_router(
+    library_module=library,
+    library_dir=LIBRARY_DIR,
+    read_and_validate=read_and_validate,
+    validate_audio_file=validate_audio_file,
+))
+app.include_router(create_reference_library_router(
+    reference_library_module=ref_lib,
+    reference_library_dir=REFERENCE_LIBRARY_DIR,
+))
+app.include_router(create_dashboard_router(
+    jobs=jobs,
+    get_system_stats=get_system_stats,
+    logger=logger,
+))
+app.include_router(create_jobs_router(
+    jobs=jobs,
+    sanitize_track_name=sanitize_track_name,
+))
 
 # BUGFIX (/ai/auto-master): ai_assistant.decide_mastering() devuelve estas 4
 # claves en escala LINEAL (0-1) con el nombre interno viejo del motor, pero
@@ -331,121 +366,6 @@ def run_stems_job(job_id: str, input_path: str, mode: str = "demucs_4stem"):
 
 
 # ── Endpoints ──────────────────────────────────────────────────────────────────
-
-@app.get("/", tags=["Info"])
-def root():
-    return {"service": "Audio Mastering API", "version": "7.0.1",
-            "max_file_mb": MAX_FILE_SIZE // 1024 // 1024,
-            "endpoints": ["/master", "/master/sync", "/master/reference", "/master/reference/sync",
-                          "/preview", "/analyze", "/spectrum",
-                          "/mix-advice", "/job/{id}", "/download/{id}", "/report/{id}",
-                          "/stems/separate", "/stems/download/{id}/{stem}",
-                          "/presets", "/preset/{name}", "/platform-targets",
-                          "/dashboard", "/ws/dashboard", "/ws/master-stream", "/ws/mix-stream"]}
-
-# ── Biblioteca de referencias permanentes ────────────────────────────────────
-
-@app.get("/reference-library", tags=["Reference Library"])
-async def get_reference_library():
-    """Lista todas las referencias en REFERENCE_LIBRARY_DIR.
-    El watcher re-indexa automáticamente al detectar cambios en la carpeta.
-    Respuesta instantánea — solo lee el índice en memoria.
-    """
-    return {"entries": ref_lib.list_entries(), "dir": REFERENCE_LIBRARY_DIR}
-
-
-@app.post("/reference-library/rescan", tags=["Reference Library"])
-async def rescan_reference_library():
-    """Fuerza re-escaneo completo (re-analiza LUFS/peak de todos los archivos)."""
-    from fastapi.concurrency import run_in_threadpool
-    n = await run_in_threadpool(ref_lib.scan, True)
-    return {"status": "ok", "entries": n, "dir": REFERENCE_LIBRARY_DIR}
-
-
-@app.get("/health", tags=["Info"])
-def health():
-    return {
-        "status": "ok",
-        "service": "Audio Mastering API",
-        "version": app.version,
-        "jobs": len(jobs.get_all()),
-        "upload_dir": UPLOAD_DIR,
-        "processed_dir": PROCESSED_DIR,
-        "stems_dir": STEMS_DIR,
-        "max_file_size_mb": MAX_FILE_SIZE // 1024 // 1024,
-    }
-
-@app.get("/presets", tags=["Presets"])
-def list_presets():
-    return {name: preset for name, preset in MASTERING_PRESETS.items()}
-
-@app.get("/preset/{name}", tags=["Presets"])
-def get_preset_endpoint(name: str):
-    try:
-        return get_preset(name)
-    except KeyError as e:
-        raise HTTPException(404, str(e))
-
-@app.get("/platform-targets", tags=["Mastering"])
-def platform_targets():
-    return PLATFORM_LOUDNESS_TARGETS
-
-# ── Librería de archivos originales ─────────────────────────────────────────
-# A diferencia de UPLOAD_DIR (efímero, un archivo por job), esto persiste
-# indefinidamente hasta que el usuario lo borra desde la web. Pensado para no
-# tener que volver a arrastrar el mismo archivo cada vez que se quiere hacer
-# un nuevo preview o mastering del mismo tema.
-@app.post("/library/upload", tags=["Librería"])
-async def library_upload(file: UploadFile = File(...)):
-    """Guarda el archivo de forma permanente en el servidor y lo agrega a la
-    librería. Devuelve la metadata (id, nombre, duración, sr, canales) que el
-    frontend necesita para listarlo y luego seleccionarlo sin volver a
-    subirlo desde el disco local."""
-    validate_audio_file(file.filename)
-    data = await read_and_validate(file)
-    meta = await run_in_threadpool(library.add_file, LIBRARY_DIR, file.filename, data)
-    return meta
-
-@app.get("/library", tags=["Librería"])
-def library_list():
-    """Lista todos los archivos guardados, más reciente primero."""
-    return {"files": library.list_files(LIBRARY_DIR)}
-
-@app.get("/library/{file_id}/download", tags=["Librería"])
-def library_download(file_id: str):
-    """Devuelve el archivo tal cual se guardó. El frontend lo usa para traer
-    los bytes al elegir un archivo de la librería (sin que el usuario tenga
-    que volver a seleccionarlo de su disco) y alimentar el flujo normal de
-    carga/preview/mastering con ellos."""
-    path = library.get_path(LIBRARY_DIR, file_id)
-    if path is None:
-        raise HTTPException(404, "Archivo no encontrado en la librería (¿se borró?).")
-    meta = library.get_meta(LIBRARY_DIR, file_id)
-    filename = meta["original_filename"] if meta else os.path.basename(path)
-    return FileResponse(path, media_type="application/octet-stream", filename=filename)
-
-@app.delete("/library/{file_id}", tags=["Librería"])
-def library_delete(file_id: str):
-    ok = library.delete_file(LIBRARY_DIR, file_id)
-    if not ok:
-        raise HTTPException(404, "Archivo no encontrado en la librería.")
-    return {"deleted": file_id}
-
-@app.get("/dashboard", tags=["Dashboard"])
-def dashboard():
-    return get_system_stats(jobs.get_all())
-
-@app.websocket("/ws/dashboard")
-async def ws_dashboard(websocket: WebSocket):
-    await websocket.accept()
-    try:
-        while True:
-            await websocket.send_json(get_system_stats(jobs.get_all()))
-            await asyncio.sleep(1.0)
-    except WebSocketDisconnect:
-        pass
-    except Exception as e:
-        logger.warning(f"ws_dashboard error: {e}")
 
 @app.post("/analyze", tags=["Análisis"])
 async def analyze(file: UploadFile = File(...)):
@@ -2456,7 +2376,7 @@ async def master_normalize_sync(
 # ── Mix multistem ─────────────────────────────────────────────────────────────
 
 def run_mix_job(job_id: str, stem_paths: dict, sr: int,
-                stem_params: dict, mix_params_dict: dict):
+                stem_params: dict, mix_params_dict: dict, cleanup_paths: Optional[set] = None):
     """Job de mezcla y mastering multistem."""
     jobs.update_job(job_id, status="processing", progress=0, stage="Iniciando mezcla")
     try:
@@ -2503,8 +2423,8 @@ def run_mix_job(job_id: str, stem_paths: dict, sr: int,
         logger.error(f"run_mix_job error: {e}", exc_info=True)
         jobs.update_job(job_id, status="error", error=str(e))
     finally:
-        # Limpiar stems temporales
-        for path in stem_paths.values():
+        # Limpiar solo stems temporales de sesión; nunca borrar archivos persistentes de la librería.
+        for path in (set(stem_paths.values()) if cleanup_paths is None else cleanup_paths):
             try:
                 if os.path.exists(path):
                     os.remove(path)
@@ -2570,11 +2490,34 @@ async def mix_stems_endpoint(
             "poll_url": f"/job/{job_id}"}
 
 
+
+def _mix_session_stem_path(session_id: str, name: str) -> Optional[str]:
+    """Devuelve el path temporal de un stem subido a una sesión del mixer."""
+    import glob as _glob
+    matches = _glob.glob(os.path.join(UPLOAD_DIR, f"mix_{session_id}_{name}.*"))
+    return matches[0] if matches else None
+
+
+def _mix_library_stem_path(file_id: Optional[str]) -> Optional[str]:
+    """Devuelve el path persistente de un stem guardado en la librería del mixer."""
+    if not file_id:
+        return None
+    return library.get_path(STEM_LIBRARY_DIR, file_id)
+
+
+def _resolve_mix_stem_path(session_id: str, name: str, library_ids: Optional[dict] = None) -> Optional[str]:
+    """Resuelve un stem del mixer desde la librería persistente o desde la sesión temporal."""
+    library_path = _mix_library_stem_path((library_ids or {}).get(name))
+    if library_path:
+        return library_path
+    return _mix_session_stem_path(session_id, name)
+
 @app.post("/mix/upload-stem", tags=["Mixer"])
 async def mix_upload_stem(
     file: UploadFile = File(...),
     session_id: str = Form(..., description="ID de sesión del mixer para agrupar stems"),
     stem_name: str = Form("", description="Nombre del stem (opcional, usa el nombre del archivo si se omite)"),
+    save_to_library: bool = Form(False, description="Guarda una copia reutilizable en la librería de stems del mixer"),
 ):
     """Sube un stem individual para una sesión de mixer.
     El frontend puede subir stems de a uno y luego llamar a /mix/submit con el session_id.
@@ -2593,14 +2536,51 @@ async def mix_upload_stem(
     except Exception:
         duration = None
 
+    library_meta = None
+    if save_to_library:
+        library_meta = library.add_file(STEM_LIBRARY_DIR, file.filename, data)
+
     return {
         "session_id": session_id,
         "stem_name": name,
         "filename": file.filename,
         "path": path,
         "duration_sec": round(duration, 2) if duration else None,
+        "library_item": library_meta,
     }
 
+
+
+@app.get("/mix/stem-library", tags=["Mixer"])
+def mix_stem_library_list():
+    """Lista stems guardados para reutilizar en futuras sesiones del mixer."""
+    return {"files": library.list_files(STEM_LIBRARY_DIR)}
+
+
+@app.post("/mix/stem-library/upload", tags=["Mixer"])
+async def mix_stem_library_upload(file: UploadFile = File(...)):
+    """Guarda un stem directamente en la librería reutilizable del mixer."""
+    validate_audio_file(file.filename)
+    data = await read_and_validate(file)
+    return library.add_file(STEM_LIBRARY_DIR, file.filename, data)
+
+
+@app.get("/mix/stem-library/{file_id}/download", tags=["Mixer"])
+def mix_stem_library_download(file_id: str):
+    path = library.get_path(STEM_LIBRARY_DIR, file_id)
+    if path is None:
+        raise HTTPException(404, "Stem no encontrado en la librería del mixer.")
+    meta = library.get_meta(STEM_LIBRARY_DIR, file_id)
+    filename = meta["original_filename"] if meta else os.path.basename(path)
+    return FileResponse(path, media_type="application/octet-stream", filename=filename)
+
+
+@app.delete("/mix/stem-library/{file_id}", tags=["Mixer"])
+def mix_stem_library_delete(file_id: str):
+    ok = library.delete_file(STEM_LIBRARY_DIR, file_id)
+    if not ok:
+        raise HTTPException(404, "Stem no encontrado en la librería del mixer.")
+    return {"deleted": file_id}
 
 @app.post("/mix/submit", tags=["Mixer"])
 async def mix_submit(
@@ -2609,25 +2589,32 @@ async def mix_submit(
     stem_names: str = Form(..., description="JSON list de nombres de stems subidos"),
     stem_params: str = Form("{}", description="JSON: {nombre: StemParams}"),
     mix_params: str = Form("{}", description="JSON: MixParams"),
+    stem_library_ids: str = Form("{}", description="JSON opcional: {nombre: library_id} para stems reutilizables"),
     sr: int = Form(44100),
 ):
     """Inicia el job de mezcla con los stems ya subidos via /mix/upload-stem."""
-    import json as _json, glob as _glob
+    import json as _json
 
     try:
         names = _json.loads(stem_names)
         s_params_dict = _json.loads(stem_params)
         m_params_dict = _json.loads(mix_params)
+        library_ids = _json.loads(stem_library_ids or "{}")
     except Exception as e:
         raise HTTPException(400, f"JSON inválido: {e}")
 
-    # Reconstruir paths de los stems subidos
+    # Reconstruir paths desde librería persistente o desde uploads temporales de sesión.
     stem_paths = {}
+    cleanup_paths = set()
     for name in names:
-        matches = _glob.glob(os.path.join(UPLOAD_DIR, f"mix_{session_id}_{name}.*"))
-        if not matches:
-            raise HTTPException(404, f"Stem '{name}' no encontrado para session_id '{session_id}'.")
-        stem_paths[name] = matches[0]
+        library_path = _mix_library_stem_path((library_ids or {}).get(name))
+        session_path = _mix_session_stem_path(session_id, name)
+        path = library_path or session_path
+        if not path:
+            raise HTTPException(404, f"Stem '{name}' no encontrado para session_id '{session_id}' ni en librería.")
+        stem_paths[name] = path
+        if path == session_path:
+            cleanup_paths.add(path)
 
     if not stem_paths:
         raise HTTPException(400, "No se encontraron stems para esta sesión.")
@@ -2644,7 +2631,7 @@ async def mix_submit(
     })
 
     background_tasks.add_task(
-        run_mix_job, job_id, stem_paths, sr, s_params_dict, m_params_dict
+        run_mix_job, job_id, stem_paths, sr, s_params_dict, m_params_dict, cleanup_paths
     )
 
     return {"job_id": job_id, "status": "queued",
@@ -2671,6 +2658,7 @@ async def ws_mix_stream(websocket: WebSocket):
         config_msg = await websocket.receive_json()
         session_id = config_msg.get("session_id")
         stem_names = config_msg.get("stem_names") or []
+        stem_library_ids = config_msg.get("stem_library_ids") or {}
         stem_params_dict = config_msg.get("stem_params") or {}
         mix_params_dict = config_msg.get("mix_params") or {}
         chunk_seconds = float(config_msg.get("chunk_seconds", 1.0))
@@ -2681,22 +2669,21 @@ async def ws_mix_stream(websocket: WebSocket):
             await websocket.send_json({"event": "error", "message": "Falta session_id o stem_names."})
             return
 
-        import glob as _glob
-
         # ── Cargar (o reusar del caché) cada stem, ya recortado al preview ────
         stems: dict = {}
         for name in stem_names:
-            cache_key = f"mix_{session_id}_{name}"
+            library_id = stem_library_ids.get(name)
+            cache_key = f"mixlib_{library_id}" if library_id else f"mix_{session_id}_{name}"
             cached = audio_cache_get(cache_key)
             if cached is not None:
                 audio, file_sr = cached
             else:
-                matches = _glob.glob(os.path.join(UPLOAD_DIR, f"mix_{session_id}_{name}.*"))
-                if not matches:
-                    await websocket.send_json({"event": "error", "message": f"Stem '{name}' no encontrado (¿se subió?)."})
+                path = _resolve_mix_stem_path(session_id, name, stem_library_ids)
+                if not path:
+                    await websocket.send_json({"event": "error", "message": f"Stem '{name}' no encontrado (¿se subió o existe en librería?)."})
                     return
                 # librosa.load es CPU-bound → threadpool para no bloquear el event loop.
-                audio, file_sr = await run_in_threadpool(librosa.load, matches[0], sr=None, mono=False)
+                audio, file_sr = await run_in_threadpool(librosa.load, path, sr=None, mono=False)
                 if audio.ndim == 1:
                     audio = audio[np.newaxis, :]
                 audio = _crop_preview(audio, file_sr, preview_seconds)
@@ -2785,88 +2772,3 @@ async def ws_mix_stream(websocket: WebSocket):
             await websocket.send_json({"event": "error", "message": str(e)})
         except Exception:
             pass
-
-
-@app.get("/job/{job_id}", tags=["Jobs"])
-def get_job(job_id: str):
-    if not jobs.exists(job_id):
-        raise HTTPException(404, "Job no encontrado")
-    job = jobs.get_job(job_id).copy()
-    if job.get("type") == "stems":
-        # Job de stem separation (#13) — no tiene "result" como los de
-        # mastering, ya deja stem_analysis/available_stems seteados en
-        # run_stems_job(). Acá solo agregamos las download_url por stem y
-        # sacamos stem_paths (son paths de servidor, no deben salir por API).
-        if job["status"] == "done":
-            job["stem_download_urls"] = {
-                name: f"/stems/download/{job_id}/{name}" for name in job.get("available_stems", [])
-            }
-        job.pop("stem_paths", None)
-        return job
-    if job["status"] == "done":
-        job["download_url"]      = f"/download/{job_id}"
-        job["report_url"]        = f"/report/{job_id}"
-        job["analysis_before"]   = job["result"].get("analysis_before")
-        job["analysis_after"]    = job["result"].get("analysis_after")
-        job["mix_advice_before"] = job["result"].get("mix_advice_before")
-        job["mix_advice_after"]  = job["result"].get("mix_advice_after")
-        job["recommendations_before"] = job["result"].get("recommendations_before")
-        job["recommendations_after"] = job["result"].get("recommendations_after")
-        job["chain_meters"]      = job["result"].get("chain_meters", {})
-        job["output_bit_depth"]  = job["result"].get("output_bit_depth")
-        if "reference_match" in job["result"]:
-            job["reference_match"]    = job["result"]["reference_match"]
-            job["analysis_reference"] = job["result"]["analysis_reference"]
-        del job["result"]
-    return job
-
-@app.get("/download/{job_id}", tags=["Jobs"])
-def download(job_id: str, name: Optional[str] = Query(None, description="Nombre del tema para el archivo descargado")):
-    if not jobs.exists(job_id):
-        raise HTTPException(404, "Job no encontrado")
-    job = jobs.get_job(job_id)
-    if job["status"] != "done":
-        raise HTTPException(400, f"Job no listo: {job['status']}")
-    output_path = job["result"]["output_path"]
-    if not os.path.exists(output_path):
-        raise HTTPException(410, "Archivo expirado. Volvé a masterizar.")
-    # Los jobs de tipo "mix" (mixer multistem) no tienen job["params"] — el
-    # mezclador siempre escribe .wav (PCM_24). Los jobs de mastering normal
-    # sí tienen params.output_format.
-    fmt = job.get("params", {}).get("output_format", "wav")
-    mt = "audio/mpeg" if fmt == "mp3" else ("audio/flac" if fmt == "flac" else "audio/wav")
-    track_name = sanitize_track_name(name)
-    return FileResponse(output_path, media_type=mt, filename=f"{track_name}.{fmt}")
-
-@app.get("/report/{job_id}", tags=["Jobs"])
-def export_report(job_id: str):
-    if not jobs.exists(job_id):
-        raise HTTPException(404, "Job no encontrado")
-    job = jobs.get_job(job_id)
-    if job["status"] != "done":
-        raise HTTPException(400, f"Job no listo: {job['status']}")
-    report = {
-        "job_id": job_id,
-        "filename": job["filename"],
-        "created_at": job["created_at"],
-        "finished_at": job.get("finished_at"),
-        "params": job["params"],
-        "analysis_before": job["result"]["analysis_before"],
-        "analysis_after": job["result"]["analysis_after"],
-        "mix_advice_before": job["result"]["mix_advice_before"],
-        "mix_advice_after": job["result"]["mix_advice_after"],
-        "recommendations_before": job["result"].get("recommendations_before"),
-        "recommendations_after": job["result"].get("recommendations_after"),
-        "chain_meters": job["result"].get("chain_meters", {}),
-    }
-    if "reference_match" in job["result"]:
-        report["reference_match"]    = job["result"]["reference_match"]
-        report["analysis_reference"] = job["result"]["analysis_reference"]
-    return JSONResponse(content=report, headers={
-        "Content-Disposition": f'attachment; filename="mastering_report_{job_id[:8]}.json"'
-    })
-
-@app.get("/jobs", tags=["Jobs"])
-def list_jobs():
-    return [{"job_id": k, "status": v["status"], "filename": v["filename"], "created_at": v["created_at"]}
-            for k, v in jobs.get_all().items()]
