@@ -69,18 +69,18 @@
                     <div class="file-size-warn" id="fileSizeWarn"></div>
                   </div>
 
-                  <div style="display:flex; gap:8px; margin-top:8px">
+                  <div class="button-row">
                     <button class="btn btn-primary" id="btnAnalyze">Analizar</button>
                     <button class="btn btn-secondary" id="btnAdvice">Recomendaciones</button>
                   </div>
 
-                  <div style="display:flex; gap:8px; margin-top:8px">
+                  <div class="button-row">
                     <button class="btn btn-automaster" id="btnMasterSync">Master (sync)</button>
                     <button class="btn btn-ref" id="btnMasterAsync">Master (enqueue)</button>
                   </div>
 
-                  <div style="margin-top:0.6rem;border:1px solid rgba(148,163,184,.25);border-radius:8px;padding:0.6rem;background:rgba(255,255,255,.02)">
-                    <div style="font-size:0.72rem;color:var(--muted);letter-spacing:0.05em;text-transform:uppercase;margin-bottom:0.4rem">📏 Normalizar por LUFS (sin procesar nada más)</div>
+                  <div class="panel-block panel-block-secondary">
+                    <div class="section-note">📏 Normalizar por LUFS (sin procesar nada más)</div>
                     <div class="param" style="margin-bottom:0.5rem">
                       <label>LUFS objetivo</label>
                       <span class="val" id="v-normalize-lufs">-14.0</span>
@@ -93,13 +93,13 @@
                         value="-14"
                         oninput="document.getElementById('v-normalize-lufs').textContent = this.value"
                       />
-                      <p style="font-size:0.65rem;color:var(--muted);margin:0.15rem 0 0">Solo ganancia — sin EQ, sin dinámica, sin referencia. -14 = streaming (Spotify/YouTube) · -23 = broadcast (EBU R128) · -6 = muy hot.</p>
+                      <p class="small-text">Solo ganancia — sin EQ, sin dinámica, sin referencia. -14 = streaming (Spotify/YouTube) · -23 = broadcast (EBU R128) · -6 = muy hot.</p>
                     </div>
-                    <button class="btn btn-secondary" id="btnNormalizeLufs" style="width:100%">Normalizar</button>
-                    <div id="normalize-status" style="font-size:0.72rem;margin-top:0.4rem"></div>
+                    <button class="btn btn-secondary full-width" id="btnNormalizeLufs">Normalizar</button>
+                    <div id="normalize-status" class="small-text" style="margin-top:0.4rem"></div>
                   </div>
 
-                  <label style="display:flex;align-items:center;gap:6px;margin-top:6px;font-size:12px;opacity:.85;cursor:pointer;">
+                  <label class="checkbox-row" style="margin-top:0.4rem; font-size: 0.82rem; opacity: .85; cursor: pointer;">
                     <input type="checkbox" id="saveToLibraryChk" checked />
                     Guardar en mi librería del servidor
                   </label>
@@ -107,11 +107,11 @@
 
                 <!-- Librería persistente: archivos ya guardados en el server -->
                 <div>
-                  <div class="section-label" style="display:flex;align-items:center;justify-content:space-between;">
+                  <div class="section-label section-header-row">
                     <span>Mi librería</span>
-                    <button type="button" id="btnRefreshLibrary" style="font-size:11px;background:none;border:none;color:inherit;opacity:.7;cursor:pointer;">↻ actualizar</button>
+                    <button type="button" id="btnRefreshLibrary" class="btn btn-secondary" style="font-size:11px;padding:0.35rem 0.6rem;">↻ actualizar</button>
                   </div>
-                  <div id="libraryList" style="max-height:180px;overflow-y:auto;font-size:12px;">
+                  <div id="libraryList" class="panel-block panel-block-secondary scroll-panel">
                     <div style="opacity:.6;padding:6px 2px;">Cargando…</div>
                   </div>
                 </div>
@@ -141,17 +141,8 @@
                     <button class="preset-btn" data-preset="podcast">🎙️ Podcast</button>
                   </div>
                   <button class="btn-preset-load" id="btnLoadPresetJson">📂 Cargar preset (JSON)</button>
-                  <input type="file" id="presetJsonInput" accept=".json,application/json" style="display: none" />
-                  <div
-                    id="presetLoadStatus"
-                    style="
-                      font-family: var(--mono);
-                      font-size: 0.65rem;
-                      color: var(--muted);
-                      min-height: 1em;
-                      margin-top: 0.22rem;
-                    "
-                  ></div>
+                  <input type="file" id="presetJsonInput" accept=".json,application/json" class="hidden-input" />
+                  <div id="presetLoadStatus" class="small-text" style="min-height: 1em; margin-top: 0.22rem;"></div>
                   <div class="param" style="margin-bottom: 0.45rem; margin-top: 0.35rem">
                     <label>Objetivo de loudness (plataforma)</label>
                   </div>
@@ -168,55 +159,19 @@
 
                 <!-- Match mastering -->
                 <details style="margin-bottom: 0">
-                  <summary
-                    style="
-                      cursor: pointer;
-                      font-family: var(--mono);
-                      font-size: 0.6rem;
-                      letter-spacing: 0.12em;
-                      color: var(--amber);
-                      text-transform: uppercase;
-                      list-style: none;
-                      display: flex;
-                      align-items: center;
-                      gap: 0.45rem;
-                      padding: 0.28rem 0;
-                      user-select: none;
-                    "
-                  >
-                    <span
-                      style="
-                        width: 3px;
-                        height: 14px;
-                        border-radius: 1px;
-                        background: var(--amber);
-                        opacity: 0.6;
-                        flex-shrink: 0;
-                        display: inline-block;
-                      "
-                    ></span>
+                  <summary class="summary-accent">
+                    <span class="summary-pill"></span>
                     🎯 Match Mastering (referencia)
-                    <span
-                      style="
-                        flex: 1;
-                        height: 1px;
-                        background: linear-gradient(90deg, var(--border2), transparent);
-                        display: inline-block;
-                      "
-                    ></span>
-                    <span style="font-size: 0.55rem; color: var(--muted)">▾</span>
+                    <span class="summary-divider"></span>
+                    <span class="muted-small">▾</span>
                   </summary>
-                  <div style="margin-top: 0.35rem">
-                    <p style="color: var(--muted); font-size: 0.72rem; margin-bottom: 0.5rem; line-height: 1.5">
+                  <div class="space-top-sm">
+                    <p class="summary-muted">
                       Subí un track masterizado y el sistema igualará el
-                      <b style="color: var(--text)">timbre</b>
-                      ,
-                      <b style="color: var(--text)">loudness</b>
-                      ,
-                      <b style="color: var(--text)">dinámica</b>
-                      ,
-                      <b style="color: var(--text)">estéreo</b>
-                      ,
+                      <b style="color: var(--text)">timbre</b>,
+                      <b style="color: var(--text)">loudness</b>,
+                      <b style="color: var(--text)">dinámica</b>,
+                      <b style="color: var(--text)">estéreo</b>,
                       <b style="color: var(--text)">punch</b>
                       ,
                       <b style="color: var(--text)">sub-graves</b>
